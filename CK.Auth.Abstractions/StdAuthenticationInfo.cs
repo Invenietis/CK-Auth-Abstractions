@@ -30,7 +30,7 @@ namespace CK.Auth
 
         /// <summary>
         /// Initializes a new <see cref="StdAuthenticationInfo"/> with a specific "current" date and time.
-        /// This constructor should be used in specific scenario (unit testing id one of them).
+        /// This constructor should be used in specific scenario (unit testing is one of them).
         /// </summary>
         /// <param name="anonymous">The anonymous user. Must be a valid anonymous.</param>
         /// <param name="actualUser">The actual user. Can be null.</param>
@@ -194,5 +194,40 @@ namespace CK.Auth
         public StdAuthenticationInfo CheckExpiration() => CheckExpiration(DateTime.UtcNow);
 
         IAuthenticationInfo IAuthenticationInfo.CheckExpiration(DateTime utcNow) => CheckExpiration(utcNow);
+
+        IAuthenticationInfo IAuthenticationInfo.ClearImpersonation() => ClearImpersonation();
+
+        /// <summary>
+        /// Removes impersonation if any (the <see cref="ActualUser"/> becomes the <see cref="User"/>).
+        /// </summary>
+        /// <returns>This or a new authentication info object.</returns>
+        public StdAuthenticationInfo ClearImpersonation()
+        {
+            return IsImpersonated 
+                    ? new StdAuthenticationInfo(_anonymous, _actualUser, null, _expires, _criticalExpires, _level)
+                    : this;
+        }
+
+        /// <summary>
+        /// Impersonates this <see cref="ActualUser"/>: the <see cref="User"/> will be the new one.
+        /// Calling this on the anonymous MUST throw an <see cref="InvalidOperationException"/>.
+        /// </summary>
+        /// <param name="user">The new impersonated user.</param>
+        /// <returns>This or a new new authentication info object.</returns>
+        IAuthenticationInfo IAuthenticationInfo.Impersonate(IUserInfo user) => Impersonate(user);
+
+        /// <summary>
+        /// Impersonates this <see cref="ActualUser"/>: the <see cref="User"/> will be the new one.
+        /// Calling this on the anonymous MUST throw an <see cref="InvalidOperationException"/>.
+        /// </summary>
+        /// <param name="user">The new impersonated user.</param>
+        /// <returns>This or a new new authentication info object.</returns>
+        public StdAuthenticationInfo Impersonate(IUserInfo user)
+        {
+            if (_actualUser.ActorId == 0) throw new InvalidOperationException();
+            return _user != user
+                    ? new StdAuthenticationInfo(_anonymous, _actualUser, user, _expires, _criticalExpires, _level)
+                    : this;
+        }
     }
 }
