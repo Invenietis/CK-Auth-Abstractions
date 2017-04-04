@@ -65,53 +65,6 @@ namespace CK.Auth.Abstractions.Tests
         }
 
         [Fact]
-        public void StdAuthenticationInfo_expirations_are_checked()
-        {
-            var time0 = new DateTime(2000, 1, 1, 14, 35, 59, DateTimeKind.Utc);
-            var time1 = new DateTime(2001, 2, 2, 14, 35, 59, DateTimeKind.Utc);
-            var time2 = new DateTime(2002, 3, 3, 14, 35, 59, DateTimeKind.Utc);
-            var time3 = new DateTime(2003, 4, 4, 14, 35, 59, DateTimeKind.Utc);
-            var u = new StdUserInfo(3712, "Albert", null);
-
-            // Challenge Expires only.
-            {
-                var a = new StdAuthenticationInfo(_typeSystem.UserInfo.Anonymous, u, null, time2, null, time0);
-                a.Level.Should().Be(AuthLevel.Normal);
-                a.User.ActorId.Should().Be(u.ActorId);
-                a.CriticalExpires.Should().BeNull();
-
-                var aNotExpired = a.CheckExpiration(time1);
-                aNotExpired.Should().BeSameAs(a);
-
-                var aExpired = a.CheckExpiration(time2);
-                aExpired.Level.Should().Be(AuthLevel.Unsafe);
-                aExpired.User.ActorId.Should().Be(0);
-                aExpired.UnsafeUser.ActorId.Should().Be(u.ActorId);
-
-                aExpired = a.CheckExpiration(time3);
-                aExpired.Level.Should().Be(AuthLevel.Unsafe);
-                aExpired.User.ActorId.Should().Be(0);
-                aExpired.UnsafeUser.ActorId.Should().Be(u.ActorId);
-            }
-            // Challenge CriticalExpires.
-            {
-                var a = new StdAuthenticationInfo(_typeSystem.UserInfo.Anonymous, u, null, time2, time1, time0);
-                a.Level.Should().Be(AuthLevel.Critical);
-
-                var noChange = a.CheckExpiration(time0);
-                noChange.Should().BeSameAs(a);
-
-                var toNormal = a.CheckExpiration(time1);
-                toNormal.Level.Should().Be(AuthLevel.Normal);
-
-                var toUnsafe = a.CheckExpiration(time2);
-                toUnsafe.Level.Should().Be(AuthLevel.Unsafe);
-                toUnsafe = a.CheckExpiration(time3);
-                toUnsafe.Level.Should().Be(AuthLevel.Unsafe);
-            }
-        }
-
-        [Fact]
         public void using_StdAuthenticationTypeSystem_to_convert_UserInfo_objects_from_and_to_ClaimsIdentity()
         {
             var time = new DateTime(2017, 4, 2, 14, 35, 59, DateTimeKind.Utc);
