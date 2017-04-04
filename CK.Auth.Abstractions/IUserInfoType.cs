@@ -45,7 +45,5 @@ namespace CK.Auth
         /// <param name="o">The Json object.</param>
         /// <returns>The extracted user info or null if <paramref name="o"/> is null.</returns>
         IUserInfo FromJObject( JObject o );
-
-
     }
 }

@@ -124,7 +124,7 @@ namespace CK.Auth
             var actualUser = UserInfoFromJObject( (JObject)o["actualUser"] );
             var expires = (DateTime?)o["expires"];
             var criticalExpires = (DateTime?)o["criticalExpires"];
-            return new StdAuthenticationInfo( _anonymous, actualUser, user, expires, criticalExpires );
+            return new StdAuthenticationInfo( this, actualUser, user, expires, criticalExpires );
         }
 
         protected virtual ClaimsPrincipal AuthenticationInfoToClaimsPrincipal( IAuthenticationInfo info )
@@ -160,7 +160,7 @@ namespace CK.Auth
             string criticalExp = u.FindFirst( "cexp" )?.Value;
             var criticalExpires = criticalExp != null ? (DateTime?)DateTimeExtensions.UnixEpoch.AddSeconds( long.Parse( criticalExp ) ) : null;
             var actualUser = u.Actor != null ? UserInfoFromClaimsIdentity( u.Actor ) : null;
-            return new StdAuthenticationInfo( _anonymous, actualUser, user, expires, criticalExpires );
+            return new StdAuthenticationInfo( this, actualUser, user, expires, criticalExpires );
         }
 
         #endregion

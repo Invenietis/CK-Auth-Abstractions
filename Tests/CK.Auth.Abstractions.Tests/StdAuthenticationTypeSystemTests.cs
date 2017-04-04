@@ -44,11 +44,11 @@ namespace CK.Auth.Abstractions.Tests
             var u1 = new StdUserInfo(3712, "Albert", new[] { new StdUserProviderInfo("Basic", time1) });
             var u2 = new StdUserInfo(12, "Robert", new[] { new StdUserProviderInfo("Google", DateTime.UtcNow), new StdUserProviderInfo("Other", time1) });
 
-            CheckFromTo(new StdAuthenticationInfo(_typeSystem.UserInfo.Anonymous, null, null, null, null));
-            CheckFromTo(new StdAuthenticationInfo(_typeSystem.UserInfo.Anonymous, u1, null, null, null));
-            CheckFromTo(new StdAuthenticationInfo(_typeSystem.UserInfo.Anonymous, u1, null, time1, null));
-            CheckFromTo(new StdAuthenticationInfo(_typeSystem.UserInfo.Anonymous, u1, null, time1, time2));
-            CheckFromTo(new StdAuthenticationInfo(_typeSystem.UserInfo.Anonymous, u1, u2, time1, time2));
+            CheckFromTo(new StdAuthenticationInfo(_typeSystem, null, null, null, null));
+            CheckFromTo(new StdAuthenticationInfo(_typeSystem, u1, null, null, null));
+            CheckFromTo(new StdAuthenticationInfo(_typeSystem, u1, null, time1, null));
+            CheckFromTo(new StdAuthenticationInfo(_typeSystem, u1, null, time1, time2));
+            CheckFromTo(new StdAuthenticationInfo(_typeSystem, u1, u2, time1, time2));
         }
 
         void CheckFromTo(StdAuthenticationInfo o)

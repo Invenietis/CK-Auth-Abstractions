@@ -13,15 +13,15 @@ namespace CK.Auth
         readonly DateTime? _expires;
         readonly DateTime? _criticalExpires;
         readonly AuthLevel _level;
-        readonly IUserInfo _anonymous;
+        readonly IAuthenticationTypeSystem _typeSystem;
 
         /// <summary>
         /// Initializes a new <see cref="StdAuthenticationInfo"/> with <see cref="AuthLevel.Unsafe"/> level.
         /// </summary>
-        /// <param name="anonymous">The anonymous user. Must be a non null, valid (<see cref="IUserInfo.ActorId"/> is 0), anonymous.</param>
+        /// <param name="typeSystem">The type system. Must not be null.</param>
         /// <param name="user">The user (and actual user). Can be null.</param>
-        public StdAuthenticationInfo(IUserInfo anonymous, IUserInfo user)
-            : this(anonymous, user, null, null, null, DateTime.MinValue)
+        public StdAuthenticationInfo(IAuthenticationTypeSystem typeSystem, IUserInfo user)
+            : this(typeSystem, user, null, null, null, DateTime.MinValue)
         {
         }
 
@@ -29,11 +29,11 @@ namespace CK.Auth
         /// Initializes a new <see cref="StdAuthenticationInfo"/> with <see cref="AuthLevel.Normal"/> level
         /// (if <paramref name="expires"/> is in the future).
         /// </summary>
-        /// <param name="anonymous">The anonymous user. Must be a non null, valid (<see cref="IUserInfo.ActorId"/> is 0), anonymous.</param>
+        /// <param name="typeSystem">The type system. Must not be null.</param>
         /// <param name="user">The user (and actual user). Can be null.</param>
         /// <param name="expires">Expiration of authentication.</param>
-        public StdAuthenticationInfo(IUserInfo anonymous, IUserInfo user, DateTime expires)
-            : this(anonymous, user, null, expires, null, DateTime.UtcNow)
+        public StdAuthenticationInfo(IAuthenticationTypeSystem typeSystem, IUserInfo user, DateTime expires)
+            : this(typeSystem, user, null, expires, null, DateTime.UtcNow)
         {
         }
 
@@ -41,25 +41,25 @@ namespace CK.Auth
         /// Initializes a new <see cref="StdAuthenticationInfo"/> with <see cref="AuthLevel.Critical"/> level
         /// (if <paramref name="expires"/> and <paramref name="criticalExpires"/> are in the future).
         /// </summary>
-        /// <param name="anonymous">The anonymous user. Must be a non null, valid (<see cref="IUserInfo.ActorId"/> is 0), anonymous.</param>
+        /// <param name="typeSystem">The type system. Must not be null.</param>
         /// <param name="user">The user (and actual user). Can be null.</param>
         /// <param name="expires">Expiration of authentication.</param>
         /// <param name="criticalExpires">Expiration of critical authentication.</param>
-        public StdAuthenticationInfo(IUserInfo anonymous, IUserInfo user, DateTime expires, DateTime criticalExpires)
-            : this(anonymous, user, null, expires, criticalExpires, DateTime.UtcNow)
+        public StdAuthenticationInfo(IAuthenticationTypeSystem typeSystem, IUserInfo user, DateTime expires, DateTime criticalExpires)
+            : this(typeSystem, user, null, expires, criticalExpires, DateTime.UtcNow)
         {
         }
 
         /// <summary>
         /// Initializes a new <see cref="StdAuthenticationInfo"/> with all its possible data.
         /// </summary>
-        /// <param name="anonymous">The anonymous user. Must be a non null, valid (<see cref="IUserInfo.ActorId"/> is 0), anonymous.</param>
+        /// <param name="typeSystem">The type system. Must not be null.</param>
         /// <param name="actualUser">The actual user. Can be null.</param>
         /// <param name="user">The user. Can be null.</param>
         /// <param name="expires">Expiration must occur after <see cref="DateTime.UtcNow"/> otherwise <see cref="Level"/> is <see cref="AuthLevel.Unsafe"/>.</param>
         /// <param name="criticalExpires">Expiration must occur after <see cref="DateTime.UtcNow"/> in order for <see cref="Level"/> to be <see cref="AuthLevel.Critical"/>.</param>
-        public StdAuthenticationInfo(IUserInfo anonymous, IUserInfo actualUser, IUserInfo user, DateTime? expires, DateTime? criticalExpires)
-            : this(anonymous, actualUser, user, expires, criticalExpires, DateTime.UtcNow)
+        public StdAuthenticationInfo(IAuthenticationTypeSystem typeSystem, IUserInfo actualUser, IUserInfo user, DateTime? expires, DateTime? criticalExpires)
+            : this(typeSystem, actualUser, user, expires, criticalExpires, DateTime.UtcNow)
         {
         }
 
@@ -67,20 +67,19 @@ namespace CK.Auth
         /// Initializes a new <see cref="StdAuthenticationInfo"/> with a specific "current" date and time.
         /// This constructor should be used in specific scenario (unit testing is one of them).
         /// </summary>
-        /// <param name="anonymous">The anonymous user. Must be a non null, valid (<see cref="IUserInfo.ActorId"/> is 0), anonymous.</param>
+        /// <param name="typeSystem">The type system. Must not be null.</param>
         /// <param name="actualUser">The actual user. Can be null.</param>
         /// <param name="user">The user. Can be null.</param>
         /// <param name="expires">Expiration must occur after <paramref name="utcNow"/> otherwise <see cref="Level"/> is <see cref="AuthLevel.Unsafe"/>.</param>
         /// <param name="criticalExpires">Expiration must occur after <paramref name="utcNow"/> in order for <see cref="Level"/> to be <see cref="AuthLevel.Critical"/>.</param>
         /// <param name="utcNow">The "current" date and time.</param>
-        public StdAuthenticationInfo(IUserInfo anonymous, IUserInfo actualUser, IUserInfo user, DateTime? expires, DateTime? criticalExpires, DateTime utcNow)
+        public StdAuthenticationInfo(IAuthenticationTypeSystem typeSystem, IUserInfo actualUser, IUserInfo user, DateTime? expires, DateTime? criticalExpires, DateTime utcNow)
         {
-            if (anonymous == null || anonymous.ActorId != 0 || anonymous.DisplayName != string.Empty)
-                throw new ArgumentException("Invalid anonymous IUserInfo.", nameof(anonymous));
+            if (typeSystem == null ) throw new ArgumentNullException(nameof(typeSystem));
             if (user == null)
             {
                 if (actualUser != null) user = actualUser;
-                else user = actualUser = anonymous;
+                else user = actualUser = typeSystem.UserInfo.Anonymous;
             }
             else
             {
@@ -124,7 +123,7 @@ namespace CK.Auth
                     level = criticalExpires.HasValue ? AuthLevel.Critical : AuthLevel.Normal;
                 }
             }
-            _anonymous = anonymous;
+            _typeSystem = typeSystem;
             _user = user;
             _actualUser = actualUser;
             _expires = expires;
@@ -135,15 +134,15 @@ namespace CK.Auth
         /// <summary>
         /// Protected raw constructor. Caution: No checks are done at all.
         /// </summary>
-        /// <param name="anonymous">The anonymous user. Must be a non null, valid (<see cref="IUserInfo.ActorId"/> is 0), anonymous.</param>
+        /// <param name="typeSystem">The type system. Must not be null.</param>
         /// <param name="actualUser">The actual user.</param>
         /// <param name="user">The user.</param>
         /// <param name="expires">Expiration date.</param>
         /// <param name="criticalExpires">Critical expiration date.</param>
         /// <param name="level">The authentication level.</param>
-        protected StdAuthenticationInfo(IUserInfo anonymous, IUserInfo actualUser, IUserInfo user, DateTime? expires, DateTime? criticalExpires, AuthLevel level)
+        protected StdAuthenticationInfo(IAuthenticationTypeSystem typeSystem, IUserInfo actualUser, IUserInfo user, DateTime? expires, DateTime? criticalExpires, AuthLevel level)
         {
-            _anonymous = anonymous;
+            _typeSystem = typeSystem;
             _user = user;
             _actualUser = actualUser;
             _expires = expires;
@@ -157,7 +156,7 @@ namespace CK.Auth
         /// (When Level is <see cref="AuthLevel.None"/> or <see cref="AuthLevel.Unsafe"/>, this User property 
         /// is the anonymous.)
         /// </summary>
-        public IUserInfo User => _level != AuthLevel.Unsafe ? _user : _anonymous;
+        public IUserInfo User => _level != AuthLevel.Unsafe ? _user : _typeSystem.UserInfo.Anonymous;
 
         /// <summary>
         /// Gets the actual user identifier that has been authenticate when <see cref="Level"/> is 
@@ -165,7 +164,7 @@ namespace CK.Auth
         /// (When Level is <see cref="AuthLevel.None"/> or <see cref="AuthLevel.Unsafe"/>, this actual user 
         /// property is the anonymous.)
         /// </summary>
-        public IUserInfo ActualUser => _level != AuthLevel.Unsafe ? _actualUser : _anonymous;
+        public IUserInfo ActualUser => _level != AuthLevel.Unsafe ? _actualUser : _typeSystem.UserInfo.Anonymous;
 
         /// <summary>
         /// Gets the user information itself whatever <see cref="Level"/> is.
@@ -216,9 +215,9 @@ namespace CK.Auth
             if( _expires.Value > utcNow )
             {
                 if( level == AuthLevel.Normal ) return this;
-                return new StdAuthenticationInfo(_anonymous, _actualUser, _user, _expires, null, AuthLevel.Normal);
+                return new StdAuthenticationInfo(_typeSystem, _actualUser, _user, _expires, null, AuthLevel.Normal);
             }
-            return new StdAuthenticationInfo(_anonymous, _actualUser, _user, null, null, AuthLevel.Unsafe);
+            return new StdAuthenticationInfo(_typeSystem, _actualUser, _user, null, null, AuthLevel.Unsafe);
         }
 
         /// <summary>
@@ -239,7 +238,7 @@ namespace CK.Auth
         public StdAuthenticationInfo ClearImpersonation()
         {
             return IsImpersonated 
-                    ? new StdAuthenticationInfo(_anonymous, _actualUser, _actualUser, _expires, _criticalExpires, _level)
+                    ? new StdAuthenticationInfo(_typeSystem, _actualUser, _actualUser, _expires, _criticalExpires, _level)
                     : this;
         }
 
@@ -259,10 +258,10 @@ namespace CK.Auth
         /// <returns>This or a new new authentication info object.</returns>
         public StdAuthenticationInfo Impersonate(IUserInfo user)
         {
-            if (user == null) user = _anonymous;
+            if (user == null) user = _typeSystem.UserInfo.Anonymous;
             if (_actualUser.ActorId == 0) throw new InvalidOperationException();
             return _user != user
-                    ? new StdAuthenticationInfo(_anonymous, _actualUser, user, _expires, _criticalExpires, _level)
+                    ? new StdAuthenticationInfo(_typeSystem, _actualUser, user, _expires, _criticalExpires, _level)
                     : this;
         }
     }
