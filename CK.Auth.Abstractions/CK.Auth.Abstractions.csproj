@@ -3,13 +3,16 @@
   <Import Project="..\Common\Shared.props" />
   
   <PropertyGroup>
-    <TargetFramework>netstandard1.3</TargetFramework>
-    <Description>Defines IUserInfo, IAuthenticationInfo and related contracts as well as default implementations.</Description>
+    <TargetFrameworks>netstandard1.3;net451</TargetFrameworks>
+    <Description>Defines IUserInfo, IAuthenticationInfo as well as default implementations like StdUserInfo, StdAuthenticationInfo and extensible StdAuthenticationTypeSystem.</Description>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="10.0.1" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.3'">
     <PackageReference Include="System.Security.Claims" Version="4.3.0" />
   </ItemGroup>
-  
+
 </Project>

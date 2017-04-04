@@ -8,6 +8,8 @@ namespace CK.Auth
     /// </summary>
     public class StdUserInfo : IUserInfo
     {
+        static readonly IUserProviderInfo[] _emptyProviders = new IUserProviderInfo[0];
+
         /// <summary>
         /// Initializes a new <see cref="StdUserInfo"/>.
         /// </summary>
@@ -19,7 +21,7 @@ namespace CK.Auth
             ActorId = actorId;
             DisplayName = displayName ?? string.Empty;
             if ((DisplayName.Length == 0) != (actorId == 0)) throw new ArgumentException($"{displayName} is empty if and only {actorId} is 0.");
-            Providers = providers ?? Array.Empty<IUserProviderInfo>();
+            Providers = providers ?? _emptyProviders;
         }
 
         /// <summary>
