@@ -1,10 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\Common\Shared.props" />
-  
+
   <PropertyGroup>
     <TargetFramework>netcoreapp1.0</TargetFramework>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
   
   <ItemGroup>

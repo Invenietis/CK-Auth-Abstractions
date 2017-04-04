@@ -32,10 +32,10 @@ namespace CK.Auth
 
         /// <summary>
         /// Creates a <see cref="IUserInfo"/> from a ClaimsIdentity.
-        /// Must return null if <paramref name="p"/> is null.
+        /// Must return null if <paramref name="id"/> is null.
         /// </summary>
-        /// <param name="p">The claims identity.</param>
-        /// <returns>The extracted authentication info or null if <paramref name="p"/> is null.</returns>
+        /// <param name="id">The claims identity.</param>
+        /// <returns>The extracted authentication info or null if <paramref name="id"/> is null.</returns>
         IUserInfo FromClaimsIdentity( ClaimsIdentity id );
 
         /// <summary>
