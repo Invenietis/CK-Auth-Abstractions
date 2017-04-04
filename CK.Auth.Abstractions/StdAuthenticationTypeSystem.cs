@@ -106,6 +106,11 @@ namespace CK.Auth
 
         JObject IAuthenticationInfoType.ToJObject( IAuthenticationInfo info ) => AuthenticationInfoToJObject( info );
 
+        /// <summary>
+        /// Implements <see cref="IAuthenticationInfoType.ToJObject(IAuthenticationInfo)"/>.
+        /// </summary>
+        /// <param name="info">The authentication information.</param>
+        /// <returns>Authentication information as a JObject.</returns>
         protected virtual JObject AuthenticationInfoToJObject( IAuthenticationInfo info )
         {
             if( info == null ) return null;
@@ -117,6 +122,11 @@ namespace CK.Auth
             return o;
         }
 
+        /// <summary>
+        /// Implements <see cref="IAuthenticationInfoType.FromJObject(JObject)"/>.
+        /// </summary>
+        /// <param name="o">The JObject.</param>
+        /// <returns>The authentication information.</returns>
         protected virtual IAuthenticationInfo AuthenticationInfoFromJObject( JObject o )
         {
             if( o == null ) return null;
@@ -124,9 +134,14 @@ namespace CK.Auth
             var actualUser = UserInfoFromJObject( (JObject)o["actualUser"] );
             var expires = (DateTime?)o["expires"];
             var criticalExpires = (DateTime?)o["criticalExpires"];
-            return new StdAuthenticationInfo( _anonymous, actualUser, user, expires, criticalExpires );
+            return new StdAuthenticationInfo( this, actualUser, user, expires, criticalExpires );
         }
 
+        /// <summary>
+        /// Implements <see cref="IAuthenticationInfoType.ToClaimsPrincipal(IAuthenticationInfo)"/>.
+        /// </summary>
+        /// <param name="info">The authentication information.</param>
+        /// <returns>Authentication information as a a claims principal.</returns>
         protected virtual ClaimsPrincipal AuthenticationInfoToClaimsPrincipal( IAuthenticationInfo info )
         {
             if( info == null ) return null;
@@ -150,6 +165,11 @@ namespace CK.Auth
             return p;
         }
 
+        /// <summary>
+        /// Implements <see cref="IAuthenticationInfoType.FromClaimsPrincipal(ClaimsPrincipal)"/>.
+        /// </summary>
+        /// <param name="p">The principal.</param>
+        /// <returns>The authentication information.</returns>
         protected virtual IAuthenticationInfo AuthenticationInfoFromClaimsPrincipal( ClaimsPrincipal p )
         {
             if( p == null ) return null;
@@ -160,7 +180,7 @@ namespace CK.Auth
             string criticalExp = u.FindFirst( "cexp" )?.Value;
             var criticalExpires = criticalExp != null ? (DateTime?)DateTimeExtensions.UnixEpoch.AddSeconds( long.Parse( criticalExp ) ) : null;
             var actualUser = u.Actor != null ? UserInfoFromClaimsIdentity( u.Actor ) : null;
-            return new StdAuthenticationInfo( _anonymous, actualUser, user, expires, criticalExpires );
+            return new StdAuthenticationInfo( this, actualUser, user, expires, criticalExpires );
         }
 
         #endregion

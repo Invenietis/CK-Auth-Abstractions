@@ -6,7 +6,7 @@ namespace CK.Auth
 {
     /// <summary>
     /// Unifies all types managers related to authentication.
-    /// <see cref="Impl.AuthenticationTypeSystem"/> is an extensible of this type system.
+    /// <see cref="StdAuthenticationTypeSystem"/> is an extensible of this type system.
     /// </summary>
     public interface IAuthenticationTypeSystem
     {
