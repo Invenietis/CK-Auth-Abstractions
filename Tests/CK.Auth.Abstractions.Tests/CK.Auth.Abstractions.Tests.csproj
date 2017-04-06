@@ -5,7 +5,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp1.0</TargetFramework>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
-    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <!--<GenerateDocumentationFile>false</GenerateDocumentationFile>-->
   </PropertyGroup>
   
   <ItemGroup>
