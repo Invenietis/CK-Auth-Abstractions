@@ -79,7 +79,7 @@ namespace CK.Auth
             if( info == null ) return null;
             var id = new ClaimsIdentity( "CKA" );
             string serialized = UserInfoToJObject( info ).ToString( Formatting.None );
-            id.AddClaim( new Claim( "sub", serialized, null, null, null, id ) );
+            id.AddClaim( new Claim( ClaimTypes.NameIdentifier, serialized, null, null, null, id ) );
             return id;
         }
 
@@ -91,7 +91,7 @@ namespace CK.Auth
         protected virtual IUserInfo UserInfoFromClaimsIdentity( ClaimsIdentity id )
         {
             return id != null
-                    ? UserInfoFromJObject( JObject.Parse( id.FindFirst( "sub" ).Value ) )
+                    ? UserInfoFromJObject( JObject.Parse( id.FindFirst(ClaimTypes.NameIdentifier).Value ) )
                     : null;
         }
 
