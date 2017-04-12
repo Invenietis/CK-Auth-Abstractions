@@ -1,6 +1,8 @@
 ﻿using FluentAssertions;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Security.Claims;
 using Xunit;
@@ -23,8 +25,8 @@ namespace CK.Auth.Abstractions.Tests
             var time = new DateTime(2017, 4, 2, 14, 35, 59, DateTimeKind.Utc);
             var u = new StdUserInfo(3712, "Albert", new[] { new StdUserProviderInfo("Basic", time) });
             JObject o = _typeSystem.UserInfo.ToJObject(u);
-            o["actorId"].Value<string>().Should().Be("3712");
-            o["displayName"].Value<string>().Should().Be("Albert");
+            o["id"].Value<string>().Should().Be("3712");
+            o["name"].Value<string>().Should().Be("Albert");
             ((JArray)o["providers"]).Should().HaveCount(1);
             o["providers"][0]["name"].Value<string>().Should().Be("Basic");
             o["providers"][0]["lastUsed"].Value<DateTime>().Should().Be(time);
@@ -37,7 +39,7 @@ namespace CK.Auth.Abstractions.Tests
         }
 
         [Fact]
-        public void test_StdAuthenticationInfo_conversion_for_JObject_and_Claims()
+        public void test_StdAuthenticationInfo_conversion_for_JObject_and_Binary_and_Claims()
         {
             var time1 = DateTime.UtcNow.AddDays(1);
             var time2 = DateTime.UtcNow.AddDays(2);
@@ -57,21 +59,27 @@ namespace CK.Auth.Abstractions.Tests
             var o2 = _typeSystem.AuthenticationInfo.FromJObject(j);
             o2.ShouldBeEquivalentTo(o);
             // For claims, seconds are used for expiration.
-            var c = _typeSystem.AuthenticationInfo.ToClaimsPrincipal(o);
-            var o3 = _typeSystem.AuthenticationInfo.FromClaimsPrincipal(c);
+            var c = _typeSystem.AuthenticationInfo.ToClaimsIdentity(o);
+            var o3 = _typeSystem.AuthenticationInfo.FromClaimsIdentity(c);
             o3.ShouldBeEquivalentTo(o, options => options
                         .Using<DateTime>(ctx => ctx.Subject.Should().BeCloseTo(ctx.Expectation, 1000))
                         .WhenTypeIs<DateTime>() );
+            // Binary serialization.
+            MemoryStream m = new MemoryStream();
+            _typeSystem.AuthenticationInfo.Write(new BinaryWriter(m), o);
+            m.Position = 0;
+            var o4 = _typeSystem.AuthenticationInfo.Read(new BinaryReader(m));
+            o4.ShouldBeEquivalentTo(o);
         }
 
         [Fact]
-        public void using_StdAuthenticationTypeSystem_to_convert_UserInfo_objects_from_and_to_ClaimsIdentity()
+        public void using_StdAuthenticationTypeSystem_to_convert_UserInfo_objects_from_and_to_Claims()
         {
             var time = new DateTime(2017, 4, 2, 14, 35, 59, DateTimeKind.Utc);
             var u = new StdUserInfo(3712, "Albert", new[] { new StdUserProviderInfo("Basic", time) });
             JObject o = _typeSystem.UserInfo.ToJObject(u);
-            ClaimsIdentity c = _typeSystem.UserInfo.ToClaimsIdentity(u);
-            var u2 = _typeSystem.UserInfo.FromClaimsIdentity(c);
+            List<Claim> c = _typeSystem.UserInfo.ToClaims(u);
+            var u2 = _typeSystem.UserInfo.FromClaims(c);
             u2.ActorId.Should().Be(3712);
             u2.DisplayName.Should().Be("Albert");
             u2.Providers.Should().HaveCount(1);
