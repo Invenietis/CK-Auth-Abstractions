@@ -12,6 +12,11 @@ namespace CK.Auth.Abstractions.Tests
         IAuthenticationTypeSystem _typeSystem = new StdAuthenticationTypeSystem();
         IUserInfo _albert = new StdUserInfo(3712, "Albert", null);
         IUserInfo _robert = new StdUserInfo(12, "Robert", null);
+        DateTime _time0 = new DateTime(2000, 1, 1, 14, 35, 59, DateTimeKind.Utc);
+        DateTime _time1 = new DateTime(2001, 2, 2, 14, 35, 59, DateTimeKind.Utc);
+        DateTime _time2 = new DateTime(2002, 3, 3, 14, 35, 59, DateTimeKind.Utc);
+        DateTime _time3 = new DateTime(2003, 4, 4, 14, 35, 59, DateTimeKind.Utc);
+
 
         [Fact]
         public void StdUserInfo_constructor_check_anonymous_constraints()
@@ -26,45 +31,40 @@ namespace CK.Auth.Abstractions.Tests
         [Fact]
         public void StdAuthenticationInfo_expirations_can_easily_be_checked()
         {
-            var time0 = new DateTime(2000, 1, 1, 14, 35, 59, DateTimeKind.Utc);
-            var time1 = new DateTime(2001, 2, 2, 14, 35, 59, DateTimeKind.Utc);
-            var time2 = new DateTime(2002, 3, 3, 14, 35, 59, DateTimeKind.Utc);
-            var time3 = new DateTime(2003, 4, 4, 14, 35, 59, DateTimeKind.Utc);
-
             // Challenge Expires only.
             {
-                var a = new StdAuthenticationInfo(_typeSystem, _albert, null, time2, null, time0);
+                var a = new StdAuthenticationInfo(_typeSystem, _albert, null, _time2, null, _time0);
                 a.Level.Should().Be(AuthLevel.Normal);
                 a.User.ActorId.Should().Be(_albert.ActorId);
                 a.CriticalExpires.Should().BeNull();
 
-                var aNotExpired = a.CheckExpiration(time1);
+                var aNotExpired = a.CheckExpiration(_time1);
                 aNotExpired.Should().BeSameAs(a);
 
-                var aExpired = a.CheckExpiration(time2);
+                var aExpired = a.CheckExpiration(_time2);
                 aExpired.Level.Should().Be(AuthLevel.Unsafe);
                 aExpired.User.ActorId.Should().Be(0);
                 aExpired.UnsafeUser.ActorId.Should().Be(_albert.ActorId);
 
-                aExpired = a.CheckExpiration(time3);
+                aExpired = a.CheckExpiration(_time3);
                 aExpired.Level.Should().Be(AuthLevel.Unsafe);
                 aExpired.User.ActorId.Should().Be(0);
                 aExpired.UnsafeUser.ActorId.Should().Be(_albert.ActorId);
             }
             // Challenge CriticalExpires.
             {
-                var a = new StdAuthenticationInfo(_typeSystem, _albert, null, time2, time1, time0);
+                var a = new StdAuthenticationInfo(_typeSystem, _albert, null, _time2, _time1, _time0);
                 a.Level.Should().Be(AuthLevel.Critical);
 
-                var noChange = a.CheckExpiration(time0);
+                var noChange = a.CheckExpiration(_time0);
                 noChange.Should().BeSameAs(a);
 
-                var toNormal = a.CheckExpiration(time1);
+                var toNormal = a.CheckExpiration(_time1);
                 toNormal.Level.Should().Be(AuthLevel.Normal);
 
-                var toUnsafe = a.CheckExpiration(time2);
+                var toUnsafe = a.CheckExpiration(_time2);
                 toUnsafe.Level.Should().Be(AuthLevel.Unsafe);
-                toUnsafe = a.CheckExpiration(time3);
+                toUnsafe = a.CheckExpiration(_time3);
                 toUnsafe.Level.Should().Be(AuthLevel.Unsafe);
             }
         }
@@ -141,6 +141,114 @@ namespace CK.Auth.Abstractions.Tests
                 a.UnsafeActualUser.Should().BeSameAs(_albert);
                 a.IsImpersonated.Should().Be(false);
             }
+        }
+
+        [Fact]
+        public void setting_a_valid_CriticalExpires_boosts_the_Expires()
+        {
+            var a = new StdAuthenticationInfo(_typeSystem, _albert);
+            a.Level.Should().Be(AuthLevel.Unsafe);
+            a = a.SetCriticalExpires(_time1, _time0);
+            a.Level.Should().Be(AuthLevel.Critical);
+            a.CriticalExpires.Should().Be(_time1);
+            a.Expires.Should().Be(_time1);
+
+            a = a.SetCriticalExpires(_time2, _time1);
+            a.Level.Should().Be(AuthLevel.Critical);
+            a.CriticalExpires.Should().Be(_time2);
+            a.Expires.Should().Be(_time2);
+        }
+
+        [Fact]
+        public void setting_an_expired_CriticalExpires_does_not_change_the_Expires_iif_it_is_still_valid()
+        {
+            var a = new StdAuthenticationInfo(_typeSystem, _albert);
+            a.Level.Should().Be(AuthLevel.Unsafe);
+            a = a.SetExpires(_time3, _time2);
+            a.Level.Should().Be(AuthLevel.Normal);
+            a.Expires.Should().Be(_time3);
+            a.CriticalExpires.Should().Be(null);
+
+            a = a.SetCriticalExpires(_time1, _time2);
+            a.Level.Should().Be(AuthLevel.Normal);
+            a.CriticalExpires.Should().Be(null);
+            a.Expires.Should().Be(_time3, "it has not changed.");
+
+            a = a.SetCriticalExpires(_time1, _time3);
+            a.Level.Should().Be(AuthLevel.Unsafe);
+            a.Expires.Should().Be(null);
+            a.CriticalExpires.Should().Be(null);
+        }
+
+        [Fact]
+        public void setting_Expires_impacts_CriticalExpires()
+        {
+            // Albert's Critical expiration is time2 and its expiration is time3.
+            var a = new StdAuthenticationInfo(_typeSystem, _albert, null, _time3, _time2, _time0);
+            a.Level.Should().Be(AuthLevel.Critical);
+            a.CriticalExpires.Should().Be(_time2);
+
+            var aSetExpiresLonger = a.SetExpires(_time3.AddDays(1), _time0);
+            aSetExpiresLonger.Level.Should().Be(AuthLevel.Critical);
+            aSetExpiresLonger.CriticalExpires.Should().Be(_time2, "CriticalExpires has not changed.");
+            aSetExpiresLonger.Expires.Should().Be(_time3.AddDays(1));
+
+            var aSetExpiresShorter = a.SetExpires(_time1, _time0);
+            aSetExpiresShorter.Level.Should().Be(AuthLevel.Critical);
+            aSetExpiresShorter.CriticalExpires.Should().Be(_time1, "CriticalExpires is never greater than Expires.");
+            aSetExpiresShorter.Expires.Should().Be(_time1);
+
+            var aSetExpiresAfterCriticalSameExpires = a.SetExpires(_time3, _time2);
+            aSetExpiresAfterCriticalSameExpires.Level.Should().Be(AuthLevel.Normal);
+            aSetExpiresAfterCriticalSameExpires.Expires.Should().Be(_time3);
+            aSetExpiresAfterCriticalSameExpires.CriticalExpires.Should().Be(null);
+
+            var aSetExpiresAfterCritical = a.SetExpires(_time3.AddSeconds(-1), _time2);
+            aSetExpiresAfterCritical.Level.Should().Be(AuthLevel.Normal);
+            aSetExpiresAfterCritical.Expires.Should().Be(_time3.AddSeconds(-1));
+            aSetExpiresAfterCritical.CriticalExpires.Should().Be(null);
+        }
+
+        [Fact]
+        public void clearing_impersonation_automatically_updates_the_expirations()
+        {
+            // Albert is impersonated in Robert and its Critical expiration time is time1
+            // and its expiration is time2.
+            var a = new StdAuthenticationInfo(_typeSystem, _albert, _robert, _time2, _time1, _time0);
+
+            var aClearedBefore = a.ClearImpersonation(_time0);
+            aClearedBefore.IsImpersonated.Should().BeFalse();
+            aClearedBefore.Level.Should().Be(AuthLevel.Critical);
+
+            var aClearedAfterCriticalExpired = a.ClearImpersonation(_time1);
+            aClearedAfterCriticalExpired.IsImpersonated.Should().BeFalse();
+            aClearedAfterCriticalExpired.Level.Should().Be(AuthLevel.Normal);
+
+            var aClearedLater = a.ClearImpersonation(_time3);
+            aClearedLater.IsImpersonated.Should().BeFalse();
+            aClearedLater.Level.Should().Be(AuthLevel.Unsafe);
+        }
+
+
+        [Fact]
+        public void setting_impersonation_automatically_updates_the_expirations()
+        {
+            // Albert's Critical expiration is time1 and its expiration is time2.
+            var a = new StdAuthenticationInfo(_typeSystem, _albert, null, _time2, _time1, _time0);
+
+            var aSetBefore = a.Impersonate( _robert, _time0);
+            aSetBefore.IsImpersonated.Should().BeTrue();
+            aSetBefore.User.Should().BeSameAs(_robert);
+            aSetBefore.ActualUser.Should().BeSameAs(_albert);
+            aSetBefore.Level.Should().Be(AuthLevel.Critical);
+
+            var aSetAfterCriticalExpired = a.Impersonate( _robert, _time1);
+            aSetAfterCriticalExpired.IsImpersonated.Should().BeTrue();
+            aSetAfterCriticalExpired.Level.Should().Be(AuthLevel.Normal);
+
+            var aSetLater = a.Impersonate(_robert,_time3);
+            aSetLater.IsImpersonated.Should().BeTrue();
+            aSetLater.Level.Should().Be(AuthLevel.Unsafe);
         }
 
         [Fact]

@@ -47,16 +47,18 @@ namespace CK.Auth
         /// <summary>
         /// Removes impersonation if any (the <see cref="ActualUser"/> becomes the <see cref="User"/>).
         /// </summary>
+        /// <param name="utcNow">The "current" date and time to challenge.</param>
         /// <returns>This or a new authentication info object.</returns>
-        new IAuthenticationInfo<T> ClearImpersonation();
+        new IAuthenticationInfo<T> ClearImpersonation(DateTime utcNow);
 
         /// <summary>
         /// Impersonates this <see cref="ActualUser"/>: the <see cref="User"/> will be the new one.
         /// Calling this on the anonymous MUST throw an <see cref="InvalidOperationException"/>.
         /// </summary>
         /// <param name="user">The new impersonated user.</param>
+        /// <param name="utcNow">The "current" date and time to challenge.</param>
         /// <returns>This or a new new authentication info object.</returns>
-        new IAuthenticationInfo<T> Impersonate( IUserInfo user );
+        new IAuthenticationInfo<T> Impersonate( IUserInfo user, DateTime utcNow);
 
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace CK.Auth
 {
@@ -57,7 +58,7 @@ namespace CK.Auth
         /// <param name="actualUser">The actual user. Can be null.</param>
         /// <param name="user">The user. Can be null.</param>
         /// <param name="expires">Expiration must occur after <see cref="DateTime.UtcNow"/> otherwise <see cref="Level"/> is <see cref="AuthLevel.Unsafe"/>.</param>
-        /// <param name="criticalExpires">Expiration must occur after <see cref="DateTime.UtcNow"/> in order for <see cref="Level"/> to be <see cref="AuthLevel.Critical"/>.</param>
+        /// <param name="criticalExpires">Expiration must occur after DateTime.UtcNow in order for <see cref="Level"/> to be <see cref="AuthLevel.Critical"/>.</param>
         public StdAuthenticationInfo(IAuthenticationTypeSystem typeSystem, IUserInfo actualUser, IUserInfo user, DateTime? expires, DateTime? criticalExpires)
             : this(typeSystem, actualUser, user, expires, criticalExpires, DateTime.UtcNow)
         {
@@ -109,7 +110,6 @@ namespace CK.Auth
                 {
                     expires = null;
                     criticalExpires = null;
-                    user = actualUser;
                     level = AuthLevel.Unsafe;
                 }
                 else
@@ -118,30 +118,15 @@ namespace CK.Auth
                     {
                         if (criticalExpires.Value.Kind == DateTimeKind.Local) throw new ArgumentException("Kind must be Utc or Unspecified, not Local.", nameof(criticalExpires));
                         if (criticalExpires.Value <= utcNow) criticalExpires = null;
-                        else if (criticalExpires.Value.Kind == DateTimeKind.Unspecified) criticalExpires = DateTime.SpecifyKind(criticalExpires.Value, DateTimeKind.Utc);
+                        else
+                        {
+                            if (criticalExpires.Value.Kind == DateTimeKind.Unspecified) criticalExpires = DateTime.SpecifyKind(criticalExpires.Value, DateTimeKind.Utc);
+                            if (criticalExpires.Value > expires.Value) criticalExpires = expires;
+                        }
                     }
                     level = criticalExpires.HasValue ? AuthLevel.Critical : AuthLevel.Normal;
                 }
             }
-            _typeSystem = typeSystem;
-            _user = user;
-            _actualUser = actualUser;
-            _expires = expires;
-            _criticalExpires = criticalExpires;
-            _level = level;
-        }
-
-        /// <summary>
-        /// Protected raw constructor. Caution: No checks are done at all.
-        /// </summary>
-        /// <param name="typeSystem">The type system. Must not be null.</param>
-        /// <param name="actualUser">The actual user.</param>
-        /// <param name="user">The user.</param>
-        /// <param name="expires">Expiration date.</param>
-        /// <param name="criticalExpires">Critical expiration date.</param>
-        /// <param name="level">The authentication level.</param>
-        protected StdAuthenticationInfo(IAuthenticationTypeSystem typeSystem, IUserInfo actualUser, IUserInfo user, DateTime? expires, DateTime? criticalExpires, AuthLevel level)
-        {
             _typeSystem = typeSystem;
             _user = user;
             _actualUser = actualUser;
@@ -199,6 +184,51 @@ namespace CK.Auth
 
         /// <summary>
         /// Handles expiration checks by returning an updated information whenever <see cref="Expires"/>
+        /// or <see cref="CriticalExpires"/> are greater than <see cref="DateTime.UtcNow"/>.
+        /// </summary>
+        /// <returns>This or an updated authentication information.</returns>
+        public StdAuthenticationInfo CheckExpiration() => CheckExpiration(DateTime.UtcNow);
+
+        IAuthenticationInfo IAuthenticationInfo.ClearImpersonation(DateTime utcNow) => ClearImpersonation(utcNow);
+
+        IAuthenticationInfo IAuthenticationInfo.Impersonate(IUserInfo user, DateTime utcNow) => Impersonate(user, utcNow);
+
+        IAuthenticationInfo IAuthenticationInfo.CheckExpiration(DateTime utcNow) => CheckExpiration(utcNow);
+
+        IAuthenticationInfo IAuthenticationInfo.SetExpires(DateTime? expires, DateTime utcNow) => SetExpires(expires, utcNow);
+
+        IAuthenticationInfo IAuthenticationInfo.SetCriticalExpires(DateTime? criticalExpires, DateTime utcNow) => SetCriticalExpires(criticalExpires, utcNow);
+
+        /// <summary>
+        /// Removes impersonation if any (the <see cref="ActualUser"/> becomes the <see cref="User"/>).
+        /// </summary>
+        /// <param name="utcNow">The "current" date and time to challenge.</param>
+        /// <returns>This or a new authentication info object.</returns>
+        public StdAuthenticationInfo ClearImpersonation(DateTime utcNow)
+        {
+            return IsImpersonated 
+                    ? Clone(_actualUser, _actualUser, _expires, _criticalExpires, utcNow)
+                    : CheckExpiration(utcNow);
+        }
+
+        /// <summary>
+        /// Impersonates this <see cref="ActualUser"/>: the <see cref="User"/> will be the new one.
+        /// Calling this on the anonymous MUST throw an <see cref="InvalidOperationException"/>.
+        /// </summary>
+        /// <param name="user">The new impersonated user.</param>
+        /// <param name="utcNow">The "current" date and time to challenge.</param>
+        /// <returns>This or a new new authentication info object.</returns>
+        public StdAuthenticationInfo Impersonate(IUserInfo user, DateTime utcNow)
+        {
+            if (user == null) user = _typeSystem.UserInfo.Anonymous;
+            if (_actualUser.ActorId == 0) throw new InvalidOperationException();
+            return _user != user
+                    ? Clone(_actualUser, user, _expires, _criticalExpires, utcNow)
+                    : CheckExpiration(utcNow);
+        }
+
+        /// <summary>
+        /// Handles expiration checks by returning an updated information whenever <see cref="Expires"/>
         /// or <see cref="CriticalExpires"/> are greater than <paramref name="utcNow"/>.
         /// </summary>
         /// <param name="utcNow">The "current" date and time to challenge.</param>
@@ -207,62 +237,69 @@ namespace CK.Auth
         {
             if (utcNow.Kind != DateTimeKind.Utc) throw new ArgumentException("Kind must be Utc.", nameof(utcNow));
             var level = _level;
-            if( level < AuthLevel.Normal 
-                || (level == AuthLevel.Critical && _criticalExpires.Value > utcNow) )
+            if (level < AuthLevel.Normal
+                || (level == AuthLevel.Critical && _criticalExpires.Value > utcNow))
             {
                 return this;
             }
-            if( _expires.Value > utcNow )
+            if (_expires.Value > utcNow)
             {
-                if( level == AuthLevel.Normal ) return this;
-                return new StdAuthenticationInfo(_typeSystem, _actualUser, _user, _expires, null, AuthLevel.Normal);
+                if (level == AuthLevel.Normal) return this;
+                Debug.Assert(level == AuthLevel.Critical);
+                return Clone(_actualUser, _user, _expires, null, utcNow);
             }
-            return new StdAuthenticationInfo(_typeSystem, _actualUser, _user, null, null, AuthLevel.Unsafe);
+            return Clone(_actualUser, _user, null, null, utcNow);
         }
 
         /// <summary>
-        /// Handles expiration checks by returning an updated information whenever <see cref="Expires"/>
-        /// or <see cref="CriticalExpires"/> are greater than <see cref="DateTime.UtcNow"/>.
+        /// Returns a new authentication information with <see cref="Expires"/> sets
+        /// to the new value (or this authentication info if it is the same).
         /// </summary>
-        /// <returns>This or an updated authentication information.</returns>
-        public StdAuthenticationInfo CheckExpiration() => CheckExpiration(DateTime.UtcNow);
-
-        IAuthenticationInfo IAuthenticationInfo.CheckExpiration(DateTime utcNow) => CheckExpiration(utcNow);
-
-        IAuthenticationInfo IAuthenticationInfo.ClearImpersonation() => ClearImpersonation();
-
-        /// <summary>
-        /// Removes impersonation if any (the <see cref="ActualUser"/> becomes the <see cref="User"/>).
-        /// </summary>
-        /// <returns>This or a new authentication info object.</returns>
-        public StdAuthenticationInfo ClearImpersonation()
+        /// <param name="expires">The new <see cref="Expires"/> value.</param>
+        /// <param name="utcNow">The "current" date and time to challenge.</param>
+        /// <returns>The updated authentication info.</returns>
+        public StdAuthenticationInfo SetExpires(DateTime? expires, DateTime utcNow)
         {
-            return IsImpersonated 
-                    ? new StdAuthenticationInfo(_typeSystem, _actualUser, _actualUser, _expires, _criticalExpires, _level)
-                    : this;
+            return expires != _expires
+                    ? Clone(_actualUser, _user, expires, _criticalExpires, utcNow)
+                    : CheckExpiration(utcNow);
         }
 
         /// <summary>
-        /// Impersonates this <see cref="ActualUser"/>: the <see cref="User"/> will be the new one.
-        /// Calling this on the anonymous MUST throw an <see cref="InvalidOperationException"/>.
+        /// Returns a new authentication information with <see cref="CriticalExpires"/> sets
+        /// to the new value (or this authentication info if it is the same).
+        /// If the new <paramref name="criticalExpires"/> is greater than <see cref="Expires"/>,
+        /// the new Expires is automatically boosted to the new critical expires time. 
         /// </summary>
-        /// <param name="user">The new impersonated user.</param>
-        /// <returns>This or a new new authentication info object.</returns>
-        IAuthenticationInfo IAuthenticationInfo.Impersonate(IUserInfo user) => Impersonate(user);
+        /// <param name="criticalExpires">The new CriticalExpires value.</param>
+        /// <param name="utcNow">The "current" date and time to challenge.</param>
+        /// <returns>The updated authentication info.</returns>
+        public StdAuthenticationInfo SetCriticalExpires(DateTime? criticalExpires, DateTime utcNow)
+        {
+            if( criticalExpires == _criticalExpires ) return CheckExpiration(utcNow);
+            DateTime? newExp = _expires;
+            if( criticalExpires.HasValue && (!newExp.HasValue || newExp.Value < criticalExpires.Value ) )
+            {
+                newExp = criticalExpires;
+            }
+            return Clone(_actualUser, _user, newExp, criticalExpires, utcNow);
+        }
 
         /// <summary>
-        /// Impersonates this <see cref="ActualUser"/>: the <see cref="User"/> will be the new one.
-        /// Calling this on the anonymous MUST throw an <see cref="InvalidOperationException"/>.
+        /// Extension point required to handle specialization of this class.
+        /// Methods like <see cref="Impersonate"/> or <see cref="SetExpires"/> call 
+        /// this instead of StdAuthenticationInfo constructor to allow specializations to 
+        /// handle extra fields and return the actual specialized type.
         /// </summary>
-        /// <param name="user">The new impersonated user.</param>
-        /// <returns>This or a new new authentication info object.</returns>
-        public StdAuthenticationInfo Impersonate(IUserInfo user)
+        /// <param name="actualUser">The new actual user.</param>
+        /// <param name="user">The new user.</param>
+        /// <param name="expires">The new expires time.</param>
+        /// <param name="criticalExpires">The new critical expires time.</param>
+        /// <param name="utcNow">The "current" date and time to challenge.</param>
+        /// <returns>New authentication info.</returns>
+        protected virtual StdAuthenticationInfo Clone(IUserInfo actualUser, IUserInfo user, DateTime? expires, DateTime? criticalExpires, DateTime utcNow )
         {
-            if (user == null) user = _typeSystem.UserInfo.Anonymous;
-            if (_actualUser.ActorId == 0) throw new InvalidOperationException();
-            return _user != user
-                    ? new StdAuthenticationInfo(_typeSystem, _actualUser, user, _expires, _criticalExpires, _level)
-                    : this;
+            return new StdAuthenticationInfo(_typeSystem, actualUser, user, expires, criticalExpires, utcNow);
         }
     }
 }
