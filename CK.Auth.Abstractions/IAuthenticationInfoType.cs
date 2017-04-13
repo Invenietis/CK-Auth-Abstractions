@@ -52,10 +52,12 @@ namespace CK.Auth
         JObject ToJObject( IAuthenticationInfo info );
 
         /// <summary>
-        /// Initializes a new <see cref="IAuthenticationInfo"/> with <see cref="AuthLevel.Unsafe"/> level.
+        /// Initializes a new <see cref="IAuthenticationInfo"/>.
         /// </summary>
         /// <param name="user">The user (and actual user). Can be null.</param>
-        IAuthenticationInfo Create(IUserInfo user);
+        /// <param name="expires">When null or already expired, Level is <see cref="AuthLevel.Unsafe"/>.</param>
+        /// <param name="criticalExpires">Optional critical expiration.</param>
+        IAuthenticationInfo Create(IUserInfo user, DateTime? expires, DateTime? criticalExpires = null);
 
         /// <summary>
         /// Writes the authentication information in binary format.

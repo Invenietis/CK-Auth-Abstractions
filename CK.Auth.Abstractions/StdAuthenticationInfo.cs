@@ -17,36 +17,13 @@ namespace CK.Auth
         readonly IAuthenticationTypeSystem _typeSystem;
 
         /// <summary>
-        /// Initializes a new <see cref="StdAuthenticationInfo"/> with <see cref="AuthLevel.Unsafe"/> level.
-        /// </summary>
-        /// <param name="typeSystem">The type system. Must not be null.</param>
-        /// <param name="user">The user (and actual user). Can be null.</param>
-        public StdAuthenticationInfo(IAuthenticationTypeSystem typeSystem, IUserInfo user)
-            : this(typeSystem, user, null, null, null, DateTime.MinValue)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new <see cref="StdAuthenticationInfo"/> with <see cref="AuthLevel.Normal"/> level
-        /// (if <paramref name="expires"/> is in the future).
-        /// </summary>
-        /// <param name="typeSystem">The type system. Must not be null.</param>
-        /// <param name="user">The user (and actual user). Can be null.</param>
-        /// <param name="expires">Expiration of authentication.</param>
-        public StdAuthenticationInfo(IAuthenticationTypeSystem typeSystem, IUserInfo user, DateTime expires)
-            : this(typeSystem, user, null, expires, null, DateTime.UtcNow)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new <see cref="StdAuthenticationInfo"/> with <see cref="AuthLevel.Critical"/> level
-        /// (if <paramref name="expires"/> and <paramref name="criticalExpires"/> are in the future).
+        /// Initializes a new <see cref="StdAuthenticationInfo"/>.
         /// </summary>
         /// <param name="typeSystem">The type system. Must not be null.</param>
         /// <param name="user">The user (and actual user). Can be null.</param>
         /// <param name="expires">Expiration of authentication.</param>
         /// <param name="criticalExpires">Expiration of critical authentication.</param>
-        public StdAuthenticationInfo(IAuthenticationTypeSystem typeSystem, IUserInfo user, DateTime expires, DateTime criticalExpires)
+        public StdAuthenticationInfo(IAuthenticationTypeSystem typeSystem, IUserInfo user, DateTime? expires = null, DateTime? criticalExpires = null)
             : this(typeSystem, user, null, expires, criticalExpires, DateTime.UtcNow)
         {
         }

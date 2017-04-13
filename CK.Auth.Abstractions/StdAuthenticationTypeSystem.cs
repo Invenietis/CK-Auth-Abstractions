@@ -267,7 +267,7 @@ namespace CK.Auth
 
         string IAuthenticationInfoType.AuthenticationType => _authenticationType;
 
-        IAuthenticationInfo IAuthenticationInfoType.Create(IUserInfo user) => CreateAuthenticationInfo(user);
+        IAuthenticationInfo IAuthenticationInfoType.Create(IUserInfo user, DateTime? expires, DateTime? criticalExpires) => CreateAuthenticationInfo(user, expires, criticalExpires);
 
         IAuthenticationInfo IAuthenticationInfoType.FromClaimsIdentity( ClaimsIdentity id )
         {
@@ -325,13 +325,15 @@ namespace CK.Auth
         }
 
         /// <summary>
-        /// Implements <see cref="IAuthenticationInfoType.Create(IUserInfo)"/>.
+        /// Implements <see cref="IAuthenticationInfoType.Create"/>.
         /// </summary>
         /// <param name="user">The unsafe user information.</param>
+        /// <param name="expires">When null or already expired, Level is <see cref="AuthLevel.Unsafe"/>.</param>
+        /// <param name="criticalExpires">Optional critical expiration.</param>
         /// <returns>The unsafe authentication information.</returns>
-        protected virtual IAuthenticationInfo CreateAuthenticationInfo(IUserInfo user)
+        protected virtual IAuthenticationInfo CreateAuthenticationInfo(IUserInfo user, DateTime? expires, DateTime? criticalExpires = null)
         {
-            return new StdAuthenticationInfo(this, user);
+            return new StdAuthenticationInfo(this, user, expires, criticalExpires);
         }
 
         /// <summary>
