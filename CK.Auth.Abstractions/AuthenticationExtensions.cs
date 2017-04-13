@@ -12,6 +12,14 @@ namespace CK.Auth
     public static class AuthenticationExtensions
     {
         /// <summary>
+        /// Tests a potential null or <see cref="AuthLevel.None"/> level: they are semantically
+        /// equivalent.
+        /// </summary>
+        /// <param name="this">This authentication info.</param>
+        /// <returns>True if this authentication info is null or has a None level.</returns>
+        public static bool IsNullOrNone(this IAuthenticationInfo @this) => @this == null || @this.Level == AuthLevel.None;
+
+        /// <summary>
         /// Handles expiration checks by returning an updated information whenever <see cref="IAuthenticationInfo.Expires"/>
         /// or <see cref="IAuthenticationInfo.CriticalExpires"/> are greater than <see cref="DateTime.UtcNow"/>.
         /// </summary>
@@ -49,7 +57,7 @@ namespace CK.Auth
         /// <summary>
         /// Impersonates this <see cref="IAuthenticationInfo.ActualUser"/>: the <see cref="IAuthenticationInfo.User"/> will 
         /// be the new one.
-        /// Calling this on the anonymous MUST throw an <see cref="InvalidOperationException"/>.
+        /// Calling this if ActualUser is the anonymous MUST throw an <see cref="InvalidOperationException"/>.
         /// </summary>
         /// <param name="this">This authentication info.</param>
         /// <param name="user">The new impersonated user.</param>

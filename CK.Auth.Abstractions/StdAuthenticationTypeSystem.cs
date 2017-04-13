@@ -17,15 +17,25 @@ namespace CK.Auth
     public class StdAuthenticationTypeSystem : IAuthenticationTypeSystem, IAuthenticationInfoType, IUserInfoType
     {
         Lazy<IUserInfo> _anonymous;
+        Lazy<IAuthenticationInfo> _none;
         string _authenticationType = "CKA";
         static readonly IUserProviderInfo[] _emptyProviders = new IUserProviderInfo[0];
 
+
+
         /// <summary>
-        /// Gets or sets the <see cref="ClaimsIdentity.AuthenticationType"/> used by <see cref="IAuthenticationInfoType.ToClaimsIdentity(IAuthenticationInfo)"/>
-        /// and enforced by <see cref="IAuthenticationInfoType.FromClaimsIdentity(ClaimsIdentity)"/>.
+        /// Gets or sets the <see cref="ClaimsIdentity.AuthenticationType"/> used by <see cref="IAuthenticationInfoType.ToClaimsIdentity"/>
+        /// and enforced by <see cref="IAuthenticationInfoType.FromClaimsIdentity"/>.
         /// Defaults to "CKA".
         /// </summary>
-        protected string AuthenticationType { get => _authenticationType; set => _authenticationType = value; }
+        public string AuthenticationType { get => _authenticationType; protected set => _authenticationType = value; }
+
+        /// <summary>
+        /// Gets the <see cref="ClaimsIdentity.AuthenticationType"/> used by <see cref="IAuthenticationInfoType.ToClaimsIdentity"/>
+        /// when exporting only the saf user claims and enforced by <see cref="IAuthenticationInfoType.FromClaimsIdentity"/>.
+        /// Always equal to "<see cref="AuthenticationType"/>-S" (defaults to "CKA-S").
+        /// </summary>
+        public string AuthenticationTypeSimple => AuthenticationType + "-S";
 
         /// <summary>
         /// The name of the <see cref="IUserInfo.DisplayName"/> for the <see cref="Claim.Type"/>
@@ -79,6 +89,7 @@ namespace CK.Auth
         public StdAuthenticationTypeSystem()
         {
             _anonymous = new Lazy<IUserInfo>(CreateAnonymous, LazyThreadSafetyMode.PublicationOnly);
+            _none = new Lazy<IAuthenticationInfo>(() => CreateAuthenticationInfo( _anonymous.Value, null ), LazyThreadSafetyMode.PublicationOnly);
         }
 
         /// <summary>
@@ -265,13 +276,19 @@ namespace CK.Auth
 
         #region IAuthenticationInfo
 
+        IAuthenticationInfo IAuthenticationInfoType.None => _none.Value;
+
         string IAuthenticationInfoType.AuthenticationType => _authenticationType;
 
         IAuthenticationInfo IAuthenticationInfoType.Create(IUserInfo user, DateTime? expires, DateTime? criticalExpires) => CreateAuthenticationInfo(user, expires, criticalExpires);
 
         IAuthenticationInfo IAuthenticationInfoType.FromClaimsIdentity( ClaimsIdentity id )
         {
-            if (id == null || id.AuthenticationType != AuthenticationType) return null;
+            if (id == null
+                || (id.AuthenticationType != AuthenticationType && id.AuthenticationType != AuthenticationTypeSimple))
+            {
+                return null;
+            }
             IUserInfo actualUser = null;
             IUserInfo user = UserInfo.FromClaims(id.Claims);
             IEnumerable<Claim> actualActorClaims = id.Claims;
@@ -289,13 +306,13 @@ namespace CK.Auth
 
         IAuthenticationInfo IAuthenticationInfoType.FromJObject( JObject o ) => AuthenticationInfoFromJObject( o );
 
-        ClaimsIdentity IAuthenticationInfoType.ToClaimsIdentity( IAuthenticationInfo info ) => AuthenticationInfoToClaimsIdentity( info );
+        ClaimsIdentity IAuthenticationInfoType.ToClaimsIdentity( IAuthenticationInfo info, bool userInfoOnly ) => AuthenticationInfoToClaimsIdentity( info, userInfoOnly );
 
         JObject IAuthenticationInfoType.ToJObject( IAuthenticationInfo info ) => AuthenticationInfoToJObject( info );
 
         void IAuthenticationInfoType.Write(BinaryWriter w, IAuthenticationInfo info)
         {
-            if (info == null) w.Write(0);
+            if (info.IsNullOrNone()) w.Write(0);
             else w.Write(1);
             int flag = 0;
             if (info.IsImpersonated) flag |= 1;
@@ -333,7 +350,7 @@ namespace CK.Auth
         /// <returns>The unsafe authentication information.</returns>
         protected virtual IAuthenticationInfo CreateAuthenticationInfo(IUserInfo user, DateTime? expires, DateTime? criticalExpires = null)
         {
-            return new StdAuthenticationInfo(this, user, expires, criticalExpires);
+            return user == null ? _none.Value : new StdAuthenticationInfo(this, user, expires, criticalExpires);
         }
 
         /// <summary>
@@ -343,7 +360,7 @@ namespace CK.Auth
         /// <returns>Authentication information as a JObject.</returns>
         protected virtual JObject AuthenticationInfoToJObject( IAuthenticationInfo info )
         {
-            if( info == null ) return null;
+            if( info.IsNullOrNone() ) return null;
             var o = new JObject();
             o.Add( new JProperty( UserKeyType, UserInfoToJObject( info.UnsafeUser ) ) );
             if( info.IsImpersonated ) o.Add( new JProperty( ActualUserKeyType, UserInfoToJObject( info.UnsafeActualUser ) ) );
@@ -368,22 +385,32 @@ namespace CK.Auth
         }
 
         /// <summary>
-        /// Implements <see cref="IAuthenticationInfoType.ToClaimsIdentity(IAuthenticationInfo)"/>.
+        /// Implements <see cref="IAuthenticationInfoType.ToClaimsIdentity"/>.
         /// It uses <see cref="AuthenticationType"/> as the <see cref="ClaimsIdentity.AuthenticationType"/>
         /// and the <see cref="ClaimsIdentity.Actor"/> for impersonation.
         /// </summary>
         /// <param name="info">The authentication information.</param>
+        /// <param name="userInfoOnly">
+        /// True to add (safe) user claims and ignore any impersonation.
+        /// False to add unsafe user claims, a <see cref="AuthLevelKeyType"/> claim for the authentication level,
+        /// the expirations if they exist and handle impersonation thanks to the <see cref="ClaimsIdentity.Actor"/>. 
+        /// </param>
         /// <returns>Authentication information as a claim identity.</returns>
-        protected virtual ClaimsIdentity AuthenticationInfoToClaimsIdentity( IAuthenticationInfo info )
+        protected virtual ClaimsIdentity AuthenticationInfoToClaimsIdentity(IAuthenticationInfo info, bool userInfoOnly)
         {
-            if( info == null ) return null;
-            ClaimsIdentity id = new ClaimsIdentity( UserInfoToClaims(info.UnsafeUser), AuthenticationType, DisplayNameKeyType, null );
+            if (info.IsNullOrNone()) return null;
+            ClaimsIdentity id = userInfoOnly
+                                    ? new ClaimsIdentity(UserInfoToClaims(info.User), AuthenticationTypeSimple, DisplayNameKeyType, null)
+                                    : new ClaimsIdentity(UserInfoToClaims(info.UnsafeUser), AuthenticationType, DisplayNameKeyType, null);
             ClaimsIdentity propertyBearer = id;
-            if ( info.IsImpersonated )
+            if (!userInfoOnly)
             {
-                id.Actor = propertyBearer = new ClaimsIdentity(UserInfoToClaims(info.UnsafeActualUser), AuthenticationType, DisplayNameKeyType, null);
+                if (info.IsImpersonated)
+                {
+                    id.Actor = propertyBearer = new ClaimsIdentity(UserInfoToClaims(info.UnsafeActualUser), AuthenticationType, DisplayNameKeyType, null);
+                }
+                propertyBearer.AddClaim(new Claim(AuthLevelKeyType, info.Level.ToString()));
             }
-            propertyBearer.AddClaim(new Claim(AuthLevelKeyType, info.Level.ToString()));
             if (info.Expires.HasValue) propertyBearer.AddClaim(new Claim(ExpirationKeyType, info.Expires.Value.ToUnixTimeSeconds().ToString()));
             if (info.CriticalExpires.HasValue) propertyBearer.AddClaim(new Claim(CriticalExpirationKeyType, info.CriticalExpires.Value.ToUnixTimeSeconds().ToString()));
             return id;
@@ -439,7 +466,6 @@ namespace CK.Auth
         {
             return new StdAuthenticationInfo(this, actualUser, user, expires, criticalExpires);
         }
-
 
         #endregion
 

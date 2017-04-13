@@ -12,11 +12,19 @@ namespace CK.Auth
     public interface IAuthenticationInfoType
     {
         /// <summary>
-        /// Gets the <see cref="ClaimsIdentity.AuthenticationType"/> used by <see cref="ToClaimsIdentity(IAuthenticationInfo)"/>
-        /// and enforced by <see cref="FromClaimsIdentity(ClaimsIdentity)"/>.
+        /// Gets the <see cref="ClaimsIdentity.AuthenticationType"/> used by <see cref="ToClaimsIdentity"/>
+        /// and enforced by <see cref="FromClaimsIdentity"/>.
         /// Defaults to "CKA".
         /// </summary>
         string AuthenticationType { get; }
+
+        /// <summary>
+        /// Gets the non authentication information: it has a <see cref="IAuthenticationInfo.Level"/> equals to
+        /// <see cref="AuthLevel.None"/> and is semantically the same as a null reference.
+        /// Use <see cref="AuthenticationExtensions.IsNullOrNone(IAuthenticationInfo)">IsNullOrNone</see> to 
+        /// easily test both.
+        /// </summary>
+        IAuthenticationInfo None { get; }
 
         /// <summary>
         /// Creates a <see cref="IAuthenticationInfo"/> from a ClaimsIdentity.
@@ -37,15 +45,22 @@ namespace CK.Auth
 
         /// <summary>
         /// Exports a <see cref="IAuthenticationInfo"/> as a claims identity object.
-        /// Must return null if <paramref name="info"/> is null.
+        /// Must return null if <paramref name="info"/> is null or none.
+        /// (See <see cref="AuthenticationExtensions.IsNullOrNone(IAuthenticationInfo)">IsNullOrNone</see> extension method).
         /// </summary>
         /// <param name="info">The authentication info.</param>
+        /// <param name="userInfoOnly">
+        /// True to add (safe) user claims and ignore any impersonation.
+        /// False to add unsafe user claims, a claim for the authentication level,
+        /// the expirations if they exist and handle impersonation thanks to the <see cref="ClaimsIdentity.Actor"/>. 
+        /// </param>
         /// <returns>The claims or null if <paramref name="info"/> is null.</returns>
-        ClaimsIdentity ToClaimsIdentity( IAuthenticationInfo info );
+        ClaimsIdentity ToClaimsIdentity( IAuthenticationInfo info, bool userInfoOnly);
 
         /// <summary>
         /// Exports a <see cref="IAuthenticationInfo"/> as a JObject.
-        /// Must return null if <paramref name="info"/> is null.
+        /// Must return null if <paramref name="info"/> is null or none.
+        /// (See <see cref="AuthenticationExtensions.IsNullOrNone(IAuthenticationInfo)">IsNullOrNone</see> extension method).
         /// </summary>
         /// <param name="info">The authentication info.</param>
         /// <returns>The Json object or null if <paramref name="info"/> is null.</returns>

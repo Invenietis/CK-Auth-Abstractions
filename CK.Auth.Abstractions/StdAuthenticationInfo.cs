@@ -190,7 +190,7 @@ namespace CK.Auth
 
         /// <summary>
         /// Impersonates this <see cref="ActualUser"/>: the <see cref="User"/> will be the new one.
-        /// Calling this on the anonymous MUST throw an <see cref="InvalidOperationException"/>.
+        /// Calling this when <see cref="ActualUser"/> is the anonymous MUST throw an <see cref="InvalidOperationException"/>.
         /// </summary>
         /// <param name="user">The new impersonated user.</param>
         /// <param name="utcNow">The "current" date and time to challenge.</param>

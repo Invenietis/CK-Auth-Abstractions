@@ -20,6 +20,22 @@ namespace CK.Auth.Abstractions.Tests
         }
 
         [Fact]
+        public void FromClaimsIdentity_handles_only_AuthenticationType_or_AuthenticationTypeSimple_ClaimsIdentity_AuthenticationType()
+        {
+            var a = _typeSystem.AuthenticationInfo.Create( new StdUserInfo(345, "Kilo"), DateTime.UtcNow.AddDays(1) );
+            var cFull = _typeSystem.AuthenticationInfo.ToClaimsIdentity(a, userInfoOnly: false);
+            cFull.AuthenticationType.Should().Be(_typeSystem.AuthenticationType);
+            var cLight = _typeSystem.AuthenticationInfo.ToClaimsIdentity(a, userInfoOnly: true);
+            cLight.AuthenticationType.Should().Be(_typeSystem.AuthenticationTypeSimple);
+
+            _typeSystem.AuthenticationInfo.FromClaimsIdentity(cFull).Should().NotBeNull();
+            _typeSystem.AuthenticationInfo.FromClaimsIdentity(cLight).Should().NotBeNull();
+
+            var other = new ClaimsIdentity(cFull.Claims, "Other");
+            _typeSystem.AuthenticationInfo.FromClaimsIdentity(other).Should().BeNull();
+        }
+
+        [Fact]
         public void using_StdAuthenticationTypeSystem_to_convert_UserInfo_objects_from_and_to_json()
         {
             var time = new DateTime(2017, 4, 2, 14, 35, 59, DateTimeKind.Utc);
@@ -49,27 +65,43 @@ namespace CK.Auth.Abstractions.Tests
             CheckFromTo(new StdAuthenticationInfo(_typeSystem, null, null, null, null));
             CheckFromTo(new StdAuthenticationInfo(_typeSystem, u1, null, null, null));
             CheckFromTo(new StdAuthenticationInfo(_typeSystem, u1, null, time1, null));
-            CheckFromTo(new StdAuthenticationInfo(_typeSystem, u1, null, time1, time2));
-            CheckFromTo(new StdAuthenticationInfo(_typeSystem, u1, u2, time1, time2));
+            CheckFromTo(new StdAuthenticationInfo(_typeSystem, u1, null, time2, time1));
+            CheckFromTo(new StdAuthenticationInfo(_typeSystem, u1, u2, time2, time1));
+            CheckFromTo(new StdAuthenticationInfo(_typeSystem, u1, u2, time2, null));
         }
 
         void CheckFromTo(StdAuthenticationInfo o)
         {
             var j = _typeSystem.AuthenticationInfo.ToJObject(o);
             var o2 = _typeSystem.AuthenticationInfo.FromJObject(j);
-            o2.ShouldBeEquivalentTo(o);
+            if (o.IsNullOrNone()) o2.Should().Match<IAuthenticationInfo>(x => x.IsNullOrNone());
+            else o2.ShouldBeEquivalentTo(o);
             // For claims, seconds are used for expiration.
-            var c = _typeSystem.AuthenticationInfo.ToClaimsIdentity(o);
+            // Using full export.
+            var c = _typeSystem.AuthenticationInfo.ToClaimsIdentity(o, userInfoOnly: false);
             var o3 = _typeSystem.AuthenticationInfo.FromClaimsIdentity(c);
-            o3.ShouldBeEquivalentTo(o, options => options
+            if (o.IsNullOrNone()) o3.Should().Match<IAuthenticationInfo>(x => x.IsNullOrNone());
+            else o3.ShouldBeEquivalentTo(o, options => options
                         .Using<DateTime>(ctx => ctx.Subject.Should().BeCloseTo(ctx.Expectation, 1000))
-                        .WhenTypeIs<DateTime>() );
+                        .WhenTypeIs<DateTime>());
+            // Using userInfoOnly export.
+            var cSafe = _typeSystem.AuthenticationInfo.ToClaimsIdentity(o, userInfoOnly: true);
+            var oSafe = _typeSystem.AuthenticationInfo.FromClaimsIdentity(cSafe);
+            var userOnly = _typeSystem.AuthenticationInfo.Create(o.User, o.Expires, o.CriticalExpires);
+            if (userOnly.IsNullOrNone()) oSafe.Should().Match<IAuthenticationInfo>( x => x.IsNullOrNone() );
+            else
+            {
+                oSafe.ShouldBeEquivalentTo(userOnly, options => options
+                        .Using<DateTime>(ctx => ctx.Subject.Should().BeCloseTo(ctx.Expectation, 1000))
+                        .WhenTypeIs<DateTime>());
+            }
             // Binary serialization.
             MemoryStream m = new MemoryStream();
             _typeSystem.AuthenticationInfo.Write(new BinaryWriter(m), o);
             m.Position = 0;
             var o4 = _typeSystem.AuthenticationInfo.Read(new BinaryReader(m));
-            o4.ShouldBeEquivalentTo(o);
+            if (o.IsNullOrNone()) o4.Should().BeNull();
+            else o4.ShouldBeEquivalentTo(o);
         }
 
         [Fact]
