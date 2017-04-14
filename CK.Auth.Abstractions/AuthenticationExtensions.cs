@@ -13,7 +13,7 @@ namespace CK.Auth
     {
         /// <summary>
         /// Tests a potential null or <see cref="AuthLevel.None"/> level: they are semantically
-        /// equivalent.
+        /// equivalent. All authentication information with a None level are equivalent.
         /// </summary>
         /// <param name="this">This authentication info.</param>
         /// <returns>True if this authentication info is null or has a None level.</returns>

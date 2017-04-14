@@ -9,14 +9,24 @@ namespace CK.Auth.Abstractions.Tests
 {
     public class StdAuthenticationAndUserInfoTests
     {
-        IAuthenticationTypeSystem _typeSystem = new StdAuthenticationTypeSystem();
-        IUserInfo _albert = new StdUserInfo(3712, "Albert", null);
-        IUserInfo _robert = new StdUserInfo(12, "Robert", null);
-        DateTime _time0 = new DateTime(2000, 1, 1, 14, 35, 59, DateTimeKind.Utc);
-        DateTime _time1 = new DateTime(2001, 2, 2, 14, 35, 59, DateTimeKind.Utc);
-        DateTime _time2 = new DateTime(2002, 3, 3, 14, 35, 59, DateTimeKind.Utc);
-        DateTime _time3 = new DateTime(2003, 4, 4, 14, 35, 59, DateTimeKind.Utc);
+        static readonly IAuthenticationTypeSystem _typeSystem;
+        static readonly IUserInfo _albert;
+        static readonly IUserInfo _robert;
+        static readonly DateTime _time0;
+        static readonly DateTime _time1;
+        static readonly DateTime _time2;
+        static readonly DateTime _time3;
 
+        static StdAuthenticationAndUserInfoTests()
+        {
+            _typeSystem = new StdAuthenticationTypeSystem();
+            _albert = _typeSystem.UserInfo.Create(3712, "Albert", null);
+            _robert = _typeSystem.UserInfo.Create(12, "Robert", null);
+            _time0 = new DateTime(2000, 1, 1, 14, 35, 59, DateTimeKind.Utc);
+            _time1 = new DateTime(2001, 2, 2, 14, 35, 59, DateTimeKind.Utc);
+            _time2 = new DateTime(2002, 3, 3, 14, 35, 59, DateTimeKind.Utc);
+            _time3 = new DateTime(2003, 4, 4, 14, 35, 59, DateTimeKind.Utc);
+        }
 
         [Fact]
         public void StdUserInfo_constructor_check_anonymous_constraints()
@@ -35,7 +45,7 @@ namespace CK.Auth.Abstractions.Tests
             {
                 var a = new StdAuthenticationInfo(_typeSystem, _albert, null, _time2, null, _time0);
                 a.Level.Should().Be(AuthLevel.Normal);
-                a.User.ActorId.Should().Be(_albert.ActorId);
+                a.User.UserId.Should().Be(_albert.UserId);
                 a.CriticalExpires.Should().BeNull();
 
                 var aNotExpired = a.CheckExpiration(_time1);
@@ -43,13 +53,13 @@ namespace CK.Auth.Abstractions.Tests
 
                 var aExpired = a.CheckExpiration(_time2);
                 aExpired.Level.Should().Be(AuthLevel.Unsafe);
-                aExpired.User.ActorId.Should().Be(0);
-                aExpired.UnsafeUser.ActorId.Should().Be(_albert.ActorId);
+                aExpired.User.UserId.Should().Be(0);
+                aExpired.UnsafeUser.UserId.Should().Be(_albert.UserId);
 
                 aExpired = a.CheckExpiration(_time3);
                 aExpired.Level.Should().Be(AuthLevel.Unsafe);
-                aExpired.User.ActorId.Should().Be(0);
-                aExpired.UnsafeUser.ActorId.Should().Be(_albert.ActorId);
+                aExpired.User.UserId.Should().Be(0);
+                aExpired.UnsafeUser.UserId.Should().Be(_albert.UserId);
             }
             // Challenge CriticalExpires.
             {

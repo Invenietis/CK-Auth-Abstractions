@@ -6,7 +6,8 @@ using System.IO;
 namespace CK.Auth
 {
     /// <summary>
-    /// Defines the core management functionalities of the <see cref="IUserInfo"/> type.
+    /// Defines "non instance" functionalities (that would have been non extensible static methods) like 
+    /// builders and converters of the <see cref="IUserInfo"/> type.
     /// </summary>
     public interface IUserInfoType
     {
@@ -14,6 +15,14 @@ namespace CK.Auth
         /// Gets the anonymous user info object.
         /// </summary>
         IUserInfo Anonymous { get; }
+
+        /// <summary>
+        /// Creates a new <see cref="IUserInfo"/>.
+        /// </summary>
+        /// <param name="userId">The user identifier.</param>
+        /// <param name="userName">The user name. Can be null or empty if and only if <paramref name="userId"/> is 0.</param>
+        /// <param name="providers">The provider list.</param>
+        IUserInfo Create(int userId, string userName, IReadOnlyList<IUserProviderInfo> providers = null);
 
         /// <summary>
         /// Exports a <see cref="IUserInfo"/> to a list of claims.

@@ -64,7 +64,7 @@ namespace CK.Auth
                 if (actualUser == null) actualUser = user;
             }
             AuthLevel level;
-            if (actualUser.ActorId == 0)
+            if (actualUser.UserId == 0)
             {
                 user = actualUser;
                 expires = null;
@@ -73,7 +73,7 @@ namespace CK.Auth
             }
             else
             {
-                if (actualUser != user && actualUser.ActorId == user.ActorId)
+                if (actualUser != user && actualUser.UserId == user.UserId)
                 {
                     user = actualUser;
                 }
@@ -198,7 +198,7 @@ namespace CK.Auth
         public StdAuthenticationInfo Impersonate(IUserInfo user, DateTime utcNow)
         {
             if (user == null) user = _typeSystem.UserInfo.Anonymous;
-            if (_actualUser.ActorId == 0) throw new InvalidOperationException();
+            if (_actualUser.UserId == 0) throw new InvalidOperationException();
             return _user != user
                     ? Clone(_actualUser, user, _expires, _criticalExpires, utcNow)
                     : CheckExpiration(utcNow);

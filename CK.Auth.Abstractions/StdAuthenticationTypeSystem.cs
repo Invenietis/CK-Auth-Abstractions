@@ -22,32 +22,31 @@ namespace CK.Auth
         static readonly IUserProviderInfo[] _emptyProviders = new IUserProviderInfo[0];
 
 
-
         /// <summary>
         /// Gets or sets the <see cref="ClaimsIdentity.AuthenticationType"/> used by <see cref="IAuthenticationInfoType.ToClaimsIdentity"/>
         /// and enforced by <see cref="IAuthenticationInfoType.FromClaimsIdentity"/>.
         /// Defaults to "CKA".
         /// </summary>
-        public string AuthenticationType { get => _authenticationType; protected set => _authenticationType = value; }
+        public string ClaimAuthenticationType { get => _authenticationType; protected set => _authenticationType = value; }
 
         /// <summary>
         /// Gets the <see cref="ClaimsIdentity.AuthenticationType"/> used by <see cref="IAuthenticationInfoType.ToClaimsIdentity"/>
         /// when exporting only the saf user claims and enforced by <see cref="IAuthenticationInfoType.FromClaimsIdentity"/>.
-        /// Always equal to "<see cref="AuthenticationType"/>-S" (defaults to "CKA-S").
+        /// Always equal to "<see cref="ClaimAuthenticationType"/>-S" (defaults to "CKA-S").
         /// </summary>
-        public string AuthenticationTypeSimple => AuthenticationType + "-S";
+        public string ClaimAuthenticationTypeSimple => ClaimAuthenticationType + "-S";
 
         /// <summary>
-        /// The name of the <see cref="IUserInfo.DisplayName"/> for the <see cref="Claim.Type"/>
+        /// The name of the <see cref="IUserInfo.UserName"/> for the <see cref="Claim.Type"/>
         /// and JObject property name.
         /// </summary>
-        public const string DisplayNameKeyType = "name";
+        public const string UserNameKeyType = "name";
 
         /// <summary>
-        /// The name of the <see cref="IUserInfo.ActorId"/> for the <see cref="Claim.Type"/>
+        /// The name of the <see cref="IUserInfo.UserId"/> for the <see cref="Claim.Type"/>
         /// and JObject property name.
         /// </summary>
-        public const string ActorIdKeyType = "id";
+        public const string UserIdKeyType = "id";
 
         /// <summary>
         /// The name of the <see cref="IUserInfo.Providers"/> for the <see cref="Claim.Type"/>
@@ -105,24 +104,36 @@ namespace CK.Auth
         #region IUserInfo
         IUserInfo IUserInfoType.Anonymous => _anonymous.Value;
 
+        /// <summary>
+        /// Creates a new <see cref="IUserInfo"/>.
+        /// </summary>
+        /// <param name="userId">The user identifier.</param>
+        /// <param name="userName">The user name. Can be null or empty if and only if <paramref name="userId"/> is 0.</param>
+        /// <param name="providers">The provider list.</param>
+        public virtual IUserInfo Create(int userId, string userName, IReadOnlyList<IUserProviderInfo> providers = null)
+        {
+            return new StdUserInfo(userId, userName, providers);
+        }
+
+
         IUserInfo IUserInfoType.FromClaims(IEnumerable<Claim> claims)
         {
             if (claims == null) return null;
-            int actorId = 0;
-            string displayName = null;
+            int userId = 0;
+            string userName = null;
             IUserProviderInfo[] providers = null;
             foreach (var c in claims)
             {
-                if (c.Type == ActorIdKeyType)
+                if (c.Type == UserIdKeyType)
                 {
-                    actorId = int.Parse(c.Value);
-                    if (actorId == 0) return _anonymous.Value;
+                    userId = int.Parse(c.Value);
+                    if (userId == 0) return _anonymous.Value;
                 }
-                if (c.Type == DisplayNameKeyType) displayName = c.Value;
+                if (c.Type == UserNameKeyType) userName = c.Value;
                 if (c.Type == ProvidersKeyType) providers = FromProvidersJArray(JArray.Parse(c.Value));
-                if (actorId != 0 && displayName != null && providers != null) break;
+                if (userId != 0 && userName != null && providers != null) break;
             }
-            return UserInfoFromClaims(actorId, displayName, providers, claims);
+            return UserInfoFromClaims(userId, userName, providers, claims);
         }
 
         IUserInfo IUserInfoType.FromJObject(JObject o) => UserInfoFromJObject(o);
@@ -135,8 +146,8 @@ namespace CK.Auth
         {
             if (info == null) w.Write(0);
             else w.Write(1);
-            w.Write(info.ActorId);
-            w.Write(info.DisplayName);
+            w.Write(info.UserId);
+            w.Write(info.UserName);
             w.Write(info.Providers.Count);
             foreach (var p in info.Providers)
             {
@@ -146,12 +157,11 @@ namespace CK.Auth
             WriteUserInfoRemainder(w, info);
         }
 
-
         IUserInfo IUserInfoType.Read(BinaryReader r)
         {
             int version = r.ReadInt32();
             if (version == 0) return null;
-            int actorId = r.ReadInt32();
+            int userId = r.ReadInt32();
             string name = r.ReadString();
             int providerCount = r.ReadInt32();
             IUserProviderInfo[] providers = _emptyProviders;
@@ -163,7 +173,7 @@ namespace CK.Auth
                     providers[i] = new StdUserProviderInfo(r.ReadString(), DateTime.FromBinary(r.ReadInt64()));
                 }
             }
-            return ReadUserInfoRemainder(r, actorId, name, providers);
+            return ReadUserInfoRemainder(r, userId, name, providers);
         }
 
         /// <summary>
@@ -181,8 +191,8 @@ namespace CK.Auth
         {
             if (info == null) return null;
             return new JObject(
-                    new JProperty(ActorIdKeyType, info.ActorId),
-                    new JProperty(DisplayNameKeyType, info.DisplayName),
+                    new JProperty(UserIdKeyType, info.UserId),
+                    new JProperty(UserNameKeyType, info.UserName),
                     new JProperty(ProvidersKeyType, ToProvidersJArray(info.Providers)));
         }
 
@@ -191,7 +201,7 @@ namespace CK.Auth
         /// </summary>
         /// <param name="providers">Providers.</param>
         /// <returns>A JArray of {name:..., lastUsed:...} objects.</returns>
-        protected JArray ToProvidersJArray(IEnumerable<IUserProviderInfo> providers)
+        protected virtual JArray ToProvidersJArray(IEnumerable<IUserProviderInfo> providers)
                     => new JArray(providers.Select(
                                     p => new JObject(new JProperty("name", p.Name), new JProperty("lastUsed", p.LastUsed))));
 
@@ -200,7 +210,7 @@ namespace CK.Auth
         /// </summary>
         /// <param name="a">Jarray to convert.</param>
         /// <returns>An array of providers.</returns>
-        protected IUserProviderInfo[] FromProvidersJArray(JArray a)
+        protected virtual IUserProviderInfo[] FromProvidersJArray(JArray a)
                     => a.Select(p => new StdUserProviderInfo((string)p["name"], (DateTime)p["lastUsed"])).ToArray();
 
         /// <summary>
@@ -211,26 +221,26 @@ namespace CK.Auth
         protected virtual IUserInfo UserInfoFromJObject(JObject o)
         {
             if (o == null) return null;
-            var actorId = (int)o[ActorIdKeyType];
-            if (actorId == 0) return _anonymous.Value;
-            var displayName = (string)o[DisplayNameKeyType];
+            var userId = (int)o[UserIdKeyType];
+            if (userId == 0) return _anonymous.Value;
+            var userName = (string)o[UserNameKeyType];
             var providers = o[ProvidersKeyType].Select(p => new StdUserProviderInfo((string)p["name"], (DateTime)p["lastUsed"])).ToArray();
-            return new StdUserInfo(actorId, displayName, providers);
+            return new StdUserInfo(userId, userName, providers);
         }
 
         /// <summary>
         /// Implements <see cref="IUserInfoType.ToClaims(IUserInfo)"/> by returning 
-        /// three claims (<see cref="DisplayNameKeyType"/>, <see cref="ActorIdKeyType"/> and <see cref="ProvidersKeyType"/>)
+        /// three claims (<see cref="UserNameKeyType"/>, <see cref="UserIdKeyType"/> and <see cref="ProvidersKeyType"/>)
         /// in the list.
         /// </summary>
         /// <param name="info">The user information.</param>
-        /// <returns>A <see cref="ClaimsIdentity"/> object.</returns>
+        /// <returns>A <see cref="ClaimsIdentity"/> object or null if info is null.</returns>
         protected virtual List<Claim> UserInfoToClaims(IUserInfo info)
         {
             if (info == null) return null;
             var list = new List<Claim>();
-            list.Add(new Claim(DisplayNameKeyType, info.DisplayName));
-            list.Add(new Claim(ActorIdKeyType, info.ActorId.ToString()));
+            list.Add(new Claim(UserNameKeyType, info.UserName));
+            list.Add(new Claim(UserIdKeyType, info.UserId.ToString()));
             list.Add(new Claim(ProvidersKeyType, ToProvidersJArray(info.Providers).ToString(Formatting.None)));
             return list;
         }
@@ -238,14 +248,14 @@ namespace CK.Auth
         /// <summary>
         /// Implements <see cref="IUserInfoType.FromClaims(IEnumerable{Claim})"/>.
         /// </summary>
-        /// <param name="actorId">The value read from <see cref="ActorIdKeyType"/> claim.</param>
-        /// <param name="displayName">The value read from <see cref="DisplayNameKeyType"/> claim.</param>
+        /// <param name="userId">The value read from <see cref="UserIdKeyType"/> claim.</param>
+        /// <param name="userName">The value read from <see cref="UserNameKeyType"/> claim.</param>
         /// <param name="providers">The Array read from <see cref="ProvidersKeyType"/> claim.</param>
         /// <param name="claims">All the Claims (including the 3 already extracted ones).</param>
         /// <returns>The user information.</returns>
-        protected virtual IUserInfo UserInfoFromClaims(int actorId, string displayName, IUserProviderInfo[] providers, IEnumerable<Claim> claims)
+        protected virtual IUserInfo UserInfoFromClaims(int userId, string userName, IUserProviderInfo[] providers, IEnumerable<Claim> claims)
         {
-            return new StdUserInfo(actorId, displayName, providers);
+            return new StdUserInfo(userId, userName, providers);
         }
 
         /// <summary>
@@ -263,13 +273,13 @@ namespace CK.Auth
         /// Basic fields of <see cref="IUserInfo"/> are already read.
         /// </summary>
         /// <param name="r">The binary reader.</param>
-        /// <param name="actorId">Already read actor identifier.</param>
-        /// <param name="name">Already read display name.</param>
+        /// <param name="userId">Already read user identifier.</param>
+        /// <param name="name">Already read user name.</param>
         /// <param name="providers">Already read providers.</param>
         /// <returns>The user info.</returns>
-        protected virtual IUserInfo ReadUserInfoRemainder(BinaryReader r, int actorId, string name, IUserProviderInfo[] providers)
+        protected virtual IUserInfo ReadUserInfoRemainder(BinaryReader r, int userId, string name, IUserProviderInfo[] providers)
         {
-            return new StdUserInfo(actorId, name, providers);
+            return new StdUserInfo(userId, name, providers);
         }
 
         #endregion
@@ -278,14 +288,12 @@ namespace CK.Auth
 
         IAuthenticationInfo IAuthenticationInfoType.None => _none.Value;
 
-        string IAuthenticationInfoType.AuthenticationType => _authenticationType;
-
         IAuthenticationInfo IAuthenticationInfoType.Create(IUserInfo user, DateTime? expires, DateTime? criticalExpires) => CreateAuthenticationInfo(user, expires, criticalExpires);
 
         IAuthenticationInfo IAuthenticationInfoType.FromClaimsIdentity( ClaimsIdentity id )
         {
             if (id == null
-                || (id.AuthenticationType != AuthenticationType && id.AuthenticationType != AuthenticationTypeSimple))
+                || (id.AuthenticationType != ClaimAuthenticationType && id.AuthenticationType != ClaimAuthenticationTypeSimple))
             {
                 return null;
             }
@@ -386,7 +394,7 @@ namespace CK.Auth
 
         /// <summary>
         /// Implements <see cref="IAuthenticationInfoType.ToClaimsIdentity"/>.
-        /// It uses <see cref="AuthenticationType"/> as the <see cref="ClaimsIdentity.AuthenticationType"/>
+        /// It uses <see cref="ClaimAuthenticationType"/> as the <see cref="ClaimsIdentity.AuthenticationType"/>
         /// and the <see cref="ClaimsIdentity.Actor"/> for impersonation.
         /// </summary>
         /// <param name="info">The authentication information.</param>
@@ -400,14 +408,14 @@ namespace CK.Auth
         {
             if (info.IsNullOrNone()) return null;
             ClaimsIdentity id = userInfoOnly
-                                    ? new ClaimsIdentity(UserInfoToClaims(info.User), AuthenticationTypeSimple, DisplayNameKeyType, null)
-                                    : new ClaimsIdentity(UserInfoToClaims(info.UnsafeUser), AuthenticationType, DisplayNameKeyType, null);
+                                    ? new ClaimsIdentity(UserInfoToClaims(info.User), ClaimAuthenticationTypeSimple, UserNameKeyType, null)
+                                    : new ClaimsIdentity(UserInfoToClaims(info.UnsafeUser), ClaimAuthenticationType, UserNameKeyType, null);
             ClaimsIdentity propertyBearer = id;
             if (!userInfoOnly)
             {
                 if (info.IsImpersonated)
                 {
-                    id.Actor = propertyBearer = new ClaimsIdentity(UserInfoToClaims(info.UnsafeActualUser), AuthenticationType, DisplayNameKeyType, null);
+                    id.Actor = propertyBearer = new ClaimsIdentity(UserInfoToClaims(info.UnsafeActualUser), ClaimAuthenticationType, UserNameKeyType, null);
                 }
                 propertyBearer.AddClaim(new Claim(AuthLevelKeyType, info.Level.ToString()));
             }
@@ -425,7 +433,7 @@ namespace CK.Auth
         /// <param name="user">The user information.</param>
         /// <param name="expires">The expiration.</param>
         /// <param name="criticalExpires">The critical expiration.</param>
-        /// <param name="id">The claims identity.</param>
+        /// <param name="id">The claims identity (its AuthenticationType is either <see cref="ClaimAuthenticationType"/> or <see cref="ClaimAuthenticationTypeSimple"/>).</param>
         /// <param name="actualActorClaims">
         /// The <see cref="ClaimsIdentity.Actor"/> claims when impersonation is active,
         /// otherwise it is the <paramref name="id"/>'s Claims.

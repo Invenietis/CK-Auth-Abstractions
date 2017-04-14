@@ -22,11 +22,12 @@ namespace CK.Auth.Abstractions.Tests
         [Fact]
         public void FromClaimsIdentity_handles_only_AuthenticationType_or_AuthenticationTypeSimple_ClaimsIdentity_AuthenticationType()
         {
-            var a = _typeSystem.AuthenticationInfo.Create( new StdUserInfo(345, "Kilo"), DateTime.UtcNow.AddDays(1) );
+            var u = _typeSystem.UserInfo.Create(345, "Kilo");
+            var a = _typeSystem.AuthenticationInfo.Create( u, DateTime.UtcNow.AddDays(1) );
             var cFull = _typeSystem.AuthenticationInfo.ToClaimsIdentity(a, userInfoOnly: false);
-            cFull.AuthenticationType.Should().Be(_typeSystem.AuthenticationType);
+            cFull.AuthenticationType.Should().Be(_typeSystem.ClaimAuthenticationType);
             var cLight = _typeSystem.AuthenticationInfo.ToClaimsIdentity(a, userInfoOnly: true);
-            cLight.AuthenticationType.Should().Be(_typeSystem.AuthenticationTypeSimple);
+            cLight.AuthenticationType.Should().Be(_typeSystem.ClaimAuthenticationTypeSimple);
 
             _typeSystem.AuthenticationInfo.FromClaimsIdentity(cFull).Should().NotBeNull();
             _typeSystem.AuthenticationInfo.FromClaimsIdentity(cLight).Should().NotBeNull();
@@ -39,7 +40,7 @@ namespace CK.Auth.Abstractions.Tests
         public void using_StdAuthenticationTypeSystem_to_convert_UserInfo_objects_from_and_to_json()
         {
             var time = new DateTime(2017, 4, 2, 14, 35, 59, DateTimeKind.Utc);
-            var u = new StdUserInfo(3712, "Albert", new[] { new StdUserProviderInfo("Basic", time) });
+            var u = _typeSystem.UserInfo.Create(3712, "Albert", new[] { new StdUserProviderInfo("Basic", time) });
             JObject o = _typeSystem.UserInfo.ToJObject(u);
             o["id"].Value<string>().Should().Be("3712");
             o["name"].Value<string>().Should().Be("Albert");
@@ -47,8 +48,8 @@ namespace CK.Auth.Abstractions.Tests
             o["providers"][0]["name"].Value<string>().Should().Be("Basic");
             o["providers"][0]["lastUsed"].Value<DateTime>().Should().Be(time);
             var u2 = _typeSystem.UserInfo.FromJObject(o);
-            u2.ActorId.Should().Be(3712);
-            u2.DisplayName.Should().Be("Albert");
+            u2.UserId.Should().Be(3712);
+            u2.UserName.Should().Be("Albert");
             u2.Providers.Should().HaveCount(1);
             u2.Providers[0].Name.Should().Be("Basic");
             u2.Providers[0].LastUsed.Should().Be(time);
@@ -59,8 +60,8 @@ namespace CK.Auth.Abstractions.Tests
         {
             var time1 = DateTime.UtcNow.AddDays(1);
             var time2 = DateTime.UtcNow.AddDays(2);
-            var u1 = new StdUserInfo(3712, "Albert", new[] { new StdUserProviderInfo("Basic", time1) });
-            var u2 = new StdUserInfo(12, "Robert", new[] { new StdUserProviderInfo("Google", DateTime.UtcNow), new StdUserProviderInfo("Other", time1) });
+            var u1 = _typeSystem.UserInfo.Create(3712, "Albert", new[] { new StdUserProviderInfo("Basic", time1) });
+            var u2 = _typeSystem.UserInfo.Create(12, "Robert", new[] { new StdUserProviderInfo("Google", DateTime.UtcNow), new StdUserProviderInfo("Other", time1) });
 
             CheckFromTo(new StdAuthenticationInfo(_typeSystem, null, null, null, null));
             CheckFromTo(new StdAuthenticationInfo(_typeSystem, u1, null, null, null));
@@ -112,8 +113,8 @@ namespace CK.Auth.Abstractions.Tests
             JObject o = _typeSystem.UserInfo.ToJObject(u);
             List<Claim> c = _typeSystem.UserInfo.ToClaims(u);
             var u2 = _typeSystem.UserInfo.FromClaims(c);
-            u2.ActorId.Should().Be(3712);
-            u2.DisplayName.Should().Be("Albert");
+            u2.UserId.Should().Be(3712);
+            u2.UserName.Should().Be("Albert");
             u2.Providers.Should().HaveCount(1);
             u2.Providers[0].Name.Should().Be("Basic");
             u2.Providers[0].LastUsed.Should().Be(time);
@@ -122,8 +123,8 @@ namespace CK.Auth.Abstractions.Tests
         static void CheckAnonymousValues(IUserInfo anonymous)
         {
             anonymous.Should().NotBeNull();
-            anonymous.ActorId.Should().Be(0);
-            anonymous.DisplayName.Should().BeEmpty();
+            anonymous.UserId.Should().Be(0);
+            anonymous.UserName.Should().BeEmpty();
             anonymous.Providers.Should().BeEmpty();
         }
     }

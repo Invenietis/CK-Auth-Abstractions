@@ -13,16 +13,17 @@ namespace CK.Auth
         /// <summary>
         /// Gets the <see cref="ClaimsIdentity.AuthenticationType"/> used by <see cref="IAuthenticationInfoType.ToClaimsIdentity"/>
         /// when exporting all the claims and enforced by <see cref="IAuthenticationInfoType.FromClaimsIdentity"/>.
+        /// The <see cref="ClaimAuthenticationTypeSimple"/> is derived from this value.
         /// Defaults to "CKA".
         /// </summary>
-        string AuthenticationType { get; }
+        string ClaimAuthenticationType { get; }
 
         /// <summary>
         /// Gets the <see cref="ClaimsIdentity.AuthenticationType"/> used by <see cref="IAuthenticationInfoType.ToClaimsIdentity"/>
         /// when exporting only the saf user claims and enforced by <see cref="IAuthenticationInfoType.FromClaimsIdentity"/>.
-        /// Always equal to "<see cref="AuthenticationType"/>-S" (defaults to "CKA-S").
+        /// Always equal to "<see cref="ClaimAuthenticationType"/>-S" (defaults to "CKA-S").
         /// </summary>
-        string AuthenticationTypeSimple { get; }
+        string ClaimAuthenticationTypeSimple { get; }
 
         /// <summary>
         /// Gets the <see cref="IUserInfoType"/> type manager.
