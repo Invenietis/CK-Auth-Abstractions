@@ -8,17 +8,17 @@ namespace CK.Auth
     public interface IUserInfo
     {
         /// <summary>
-        /// Gets the actor identifier.
+        /// Gets the user identifier.
         /// There are no constraints on this value (except that 0 is the Anonymous identifier by design).
         /// It may be a negative value.
         /// </summary>
-        int ActorId { get; }
+        int UserId { get; }
 
         /// <summary>
         /// Gets the user name.
-        /// It is never null and it is empty if and only if <see cref="ActorId"/> is 0.
+        /// It is never null and it is empty if and only if <see cref="UserId"/> is 0.
         /// </summary>
-        string DisplayName { get; }
+        string UserName { get; }
 
         /// <summary>
         /// Gets the authentication providers that this user has used at least once.

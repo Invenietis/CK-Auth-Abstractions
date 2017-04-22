@@ -13,26 +13,26 @@ namespace CK.Auth
         /// <summary>
         /// Initializes a new <see cref="StdUserInfo"/>.
         /// </summary>
-        /// <param name="actorId">The actor identifier.</param>
-        /// <param name="displayName">The display name. Can be null or empty if and only if <paramref name="actorId"/> is 0.</param>
+        /// <param name="userId">The user identifier.</param>
+        /// <param name="userName">The user name. Can be null or empty if and only if <paramref name="userId"/> is 0.</param>
         /// <param name="providers">The provider list.</param>
-        public StdUserInfo( int actorId, string displayName, IReadOnlyList<IUserProviderInfo> providers = null )
+        public StdUserInfo( int userId, string userName, IReadOnlyList<IUserProviderInfo> providers = null )
         {
-            ActorId = actorId;
-            DisplayName = displayName ?? string.Empty;
-            if ((DisplayName.Length == 0) != (actorId == 0)) throw new ArgumentException($"{displayName} is empty if and only {actorId} is 0.");
+            UserId = userId;
+            UserName = userName ?? string.Empty;
+            if ((UserName.Length == 0) != (userId == 0)) throw new ArgumentException($"{userName} is empty if and only {userId} is 0.");
             Providers = providers ?? _emptyProviders;
         }
 
         /// <summary>
-        /// See <see cref="IUserInfo.ActorId"/>.
+        /// See <see cref="IUserInfo.UserId"/>.
         /// </summary>
-        public int ActorId { get; }
+        public int UserId { get; }
 
         /// <summary>
-        /// See <see cref="IUserInfo.DisplayName"/>.
+        /// See <see cref="IUserInfo.UserName"/>.
         /// </summary>
-        public string DisplayName { get; }
+        public string UserName { get; }
 
         /// <summary>
         /// See <see cref="IUserInfo.Providers"/>.

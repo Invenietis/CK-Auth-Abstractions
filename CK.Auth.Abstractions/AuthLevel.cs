@@ -12,6 +12,7 @@ namespace CK.Auth
     {
         /// <summary>
         /// No authentication: this is the default value.
+        /// The user is necessarily the anonymous.
         /// </summary>
         None = 0,
         /// <summary>

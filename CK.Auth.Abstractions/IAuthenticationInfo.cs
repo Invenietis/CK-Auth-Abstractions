@@ -66,18 +66,40 @@ namespace CK.Auth
         IAuthenticationInfo CheckExpiration(DateTime utcNow);
 
         /// <summary>
+        /// Returns a new authentication information with <see cref="Expires"/> sets
+        /// to the new value (or this authentication info if it is the same).
+        /// </summary>
+        /// <param name="expires">The new <see cref="Expires"/> value.</param>
+        /// <param name="utcNow">The "current" date and time to challenge.</param>
+        /// <returns>The updated authentication info.</returns>
+        IAuthenticationInfo SetExpires(DateTime? expires, DateTime utcNow);
+
+        /// <summary>
+        /// Returns a new authentication information with <see cref="CriticalExpires"/> sets
+        /// to the new value (or this authentication info if it is the same).
+        /// If the new <paramref name="criticalExpires"/> is greater than <see cref="Expires"/>,
+        /// the new Expires is automatically boosted to the new critical expires time. 
+        /// </summary>
+        /// <param name="criticalExpires">The new CriticalExpires value.</param>
+        /// <param name="utcNow">The "current" date and time to challenge.</param>
+        /// <returns>The updated authentication info.</returns>
+        IAuthenticationInfo SetCriticalExpires(DateTime? criticalExpires, DateTime utcNow);
+
+        /// <summary>
         /// Removes impersonation if any (the <see cref="ActualUser"/> becomes the <see cref="User"/>).
         /// </summary>
+        /// <param name="utcNow">The "current" date and time to challenge.</param>
         /// <returns>This or a new authentication info object.</returns>
-        IAuthenticationInfo ClearImpersonation();
+        IAuthenticationInfo ClearImpersonation(DateTime utcNow);
 
         /// <summary>
         /// Impersonates this <see cref="ActualUser"/>: the <see cref="User"/> will be the new one.
         /// Calling this on the anonymous MUST throw an <see cref="InvalidOperationException"/>.
         /// </summary>
         /// <param name="user">The new impersonated user.</param>
+        /// <param name="utcNow">The "current" date and time to challenge.</param>
         /// <returns>This or a new new authentication info object.</returns>
-        IAuthenticationInfo Impersonate( IUserInfo user );
+        IAuthenticationInfo Impersonate( IUserInfo user, DateTime utcNow);
 
     }
 }
