@@ -8,16 +8,16 @@ using System.IO;
 namespace CK.Auth
 {
     /// <summary>
-    /// Standard implementation of <see cref="IUserProviderInfo"/>.
+    /// Standard implementation of <see cref="IUserSchemeInfo"/>.
     /// </summary>
-    public class StdUserProviderInfo : IUserProviderInfo
+    public class StdUserSchemeInfo : IUserSchemeInfo
     {
         /// <summary>
-        /// Initializes a new <see cref="StdUserProviderInfo"/>.
+        /// Initializes a new <see cref="StdUserSchemeInfo"/>.
         /// </summary>
-        /// <param name="name">Provider name must not be null, empty or white spaces.</param>
+        /// <param name="name">Scheme name must not be null, empty or white spaces.</param>
         /// <param name="lastUsed">Last used must be a <see cref="DateTimeKind.Utc"/> or <see cref="DateTimeKind.Unspecified"/> date.</param>
-        public StdUserProviderInfo( string name, DateTime lastUsed )
+        public StdUserSchemeInfo( string name, DateTime lastUsed )
         {
             if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException();
             if (lastUsed.Kind == DateTimeKind.Local) throw new ArgumentException("Kind must be Utc or Unspecified, not Local.");
@@ -28,12 +28,12 @@ namespace CK.Auth
         }
 
         /// <summary>
-        /// See <see cref="IUserProviderInfo.Name"/>.
+        /// See <see cref="IUserSchemeInfo.Name"/>.
         /// </summary>
         public string Name { get; }
 
         /// <summary>
-        /// See <see cref="IUserProviderInfo.LastUsed"/>.
+        /// See <see cref="IUserSchemeInfo.LastUsed"/>.
         /// </summary>
         public DateTime LastUsed { get; }
 

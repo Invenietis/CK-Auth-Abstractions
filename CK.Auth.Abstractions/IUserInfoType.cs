@@ -21,8 +21,8 @@ namespace CK.Auth
         /// </summary>
         /// <param name="userId">The user identifier.</param>
         /// <param name="userName">The user name. Can be null or empty if and only if <paramref name="userId"/> is 0.</param>
-        /// <param name="providers">The provider list.</param>
-        IUserInfo Create(int userId, string userName, IReadOnlyList<IUserProviderInfo> providers = null);
+        /// <param name="schemes">The schemes list.</param>
+        IUserInfo Create(int userId, string userName, IReadOnlyList<IUserSchemeInfo> schemes = null);
 
         /// <summary>
         /// Exports a <see cref="IUserInfo"/> to a list of claims.
