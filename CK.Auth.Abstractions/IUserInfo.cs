@@ -21,10 +21,10 @@ namespace CK.Auth
         string UserName { get; }
 
         /// <summary>
-        /// Gets the authentication providers that this user has used at least once.
+        /// Gets the authentication schemes that this user has used at least once.
         /// It is never null but may be empty. 
         /// </summary>
-        IReadOnlyList<IUserProviderInfo> Providers { get; }
+        IReadOnlyList<IUserSchemeInfo> Schemes { get; }
 
     }
 }

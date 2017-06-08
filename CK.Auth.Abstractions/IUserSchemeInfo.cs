@@ -8,18 +8,18 @@ using System.IO;
 namespace CK.Auth
 {
     /// <summary>
-    /// Exposes provider <see cref="Name"/> and <see cref="LastUsed"/> by a <see cref="IUserInfo"/>.
+    /// Exposes scheme <see cref="Name"/> and <see cref="LastUsed"/> by a <see cref="IUserInfo"/>.
     /// </summary>
-    public interface IUserProviderInfo
+    public interface IUserSchemeInfo
     {
         /// <summary>
-        /// Gets the provider name.
+        /// Gets the scheme name.
         /// This MUST never be null, empty or white spaces.
         /// </summary>
         string Name { get; }
 
         /// <summary>
-        /// Gets the last time this provider has been used.
+        /// Gets the last time this scheme has been used.
         /// This MUST always be in <see cref="DateTimeKind.Utc"/>.
         /// </summary>
         DateTime LastUsed { get; }

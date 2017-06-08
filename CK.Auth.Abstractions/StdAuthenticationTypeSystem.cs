@@ -19,7 +19,7 @@ namespace CK.Auth
         Lazy<IUserInfo> _anonymous;
         Lazy<IAuthenticationInfo> _none;
         string _authenticationType = "CKA";
-        static readonly IUserProviderInfo[] _emptyProviders = new IUserProviderInfo[0];
+        static readonly IUserSchemeInfo[] _emptySchemes = new IUserSchemeInfo[0];
 
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace CK.Auth
         /// The name of the <see cref="IUserInfo.Providers"/> for the <see cref="Claim.Type"/>
         /// and JObject property name.
         /// </summary>
-        public const string ProvidersKeyType = "providers";
+        public const string SchemesKeyType = "providers";
 
         /// <summary>
         /// The name of the <see cref="IAuthenticationInfo.Level"/> for the <see cref="Claim.Type"/>
@@ -109,10 +109,10 @@ namespace CK.Auth
         /// </summary>
         /// <param name="userId">The user identifier.</param>
         /// <param name="userName">The user name. Can be null or empty if and only if <paramref name="userId"/> is 0.</param>
-        /// <param name="providers">The provider list.</param>
-        public virtual IUserInfo Create(int userId, string userName, IReadOnlyList<IUserProviderInfo> providers = null)
+        /// <param name="schemes">The schemes list.</param>
+        public virtual IUserInfo Create(int userId, string userName, IReadOnlyList<IUserSchemeInfo> schemes = null)
         {
-            return new StdUserInfo(userId, userName, providers);
+            return new StdUserInfo(userId, userName, schemes);
         }
 
 
@@ -121,7 +121,7 @@ namespace CK.Auth
             if (claims == null) return null;
             int userId = 0;
             string userName = null;
-            IUserProviderInfo[] providers = null;
+            IUserSchemeInfo[] schemes = null;
             foreach (var c in claims)
             {
                 if (c.Type == UserIdKeyType)
@@ -130,10 +130,10 @@ namespace CK.Auth
                     if (userId == 0) return _anonymous.Value;
                 }
                 if (c.Type == UserNameKeyType) userName = c.Value;
-                if (c.Type == ProvidersKeyType) providers = FromProvidersJArray(JArray.Parse(c.Value));
-                if (userId != 0 && userName != null && providers != null) break;
+                if (c.Type == SchemesKeyType) schemes = FromSchemesJArray(JArray.Parse(c.Value));
+                if (userId != 0 && userName != null && schemes != null) break;
             }
-            return UserInfoFromClaims(userId, userName, providers, claims);
+            return UserInfoFromClaims(userId, userName, schemes, claims);
         }
 
         IUserInfo IUserInfoType.FromJObject(JObject o) => UserInfoFromJObject(o);
@@ -148,8 +148,8 @@ namespace CK.Auth
             else w.Write(1);
             w.Write(info.UserId);
             w.Write(info.UserName);
-            w.Write(info.Providers.Count);
-            foreach (var p in info.Providers)
+            w.Write(info.Schemes.Count);
+            foreach (var p in info.Schemes)
             {
                 w.Write(p.Name);
                 w.Write(p.LastUsed.ToBinary());
@@ -163,17 +163,17 @@ namespace CK.Auth
             if (version == 0) return null;
             int userId = r.ReadInt32();
             string name = r.ReadString();
-            int providerCount = r.ReadInt32();
-            IUserProviderInfo[] providers = _emptyProviders;
-            if (providerCount > 0)
+            int schemeCount = r.ReadInt32();
+            IUserSchemeInfo[] schemes = _emptySchemes;
+            if (schemeCount > 0)
             {
-                providers = new IUserProviderInfo[providerCount];
-                for(int i = 0; i < providerCount; ++i)
+                schemes = new IUserSchemeInfo[schemeCount];
+                for(int i = 0; i < schemeCount; ++i)
                 {
-                    providers[i] = new StdUserProviderInfo(r.ReadString(), DateTime.FromBinary(r.ReadInt64()));
+                    schemes[i] = new StdUserSchemeInfo(r.ReadString(), DateTime.FromBinary(r.ReadInt64()));
                 }
             }
-            return ReadUserInfoRemainder(r, userId, name, providers);
+            return ReadUserInfoRemainder(r, userId, name, schemes);
         }
 
         /// <summary>
@@ -193,16 +193,16 @@ namespace CK.Auth
             return new JObject(
                     new JProperty(UserIdKeyType, info.UserId),
                     new JProperty(UserNameKeyType, info.UserName),
-                    new JProperty(ProvidersKeyType, ToProvidersJArray(info.Providers)));
+                    new JProperty(SchemesKeyType, ToSchemesJArray( info.Schemes)));
         }
 
         /// <summary>
-        /// Helpers to get a JArray from <see cref="IUserInfo.Providers"/>.
+        /// Helpers to get a JArray from <see cref="IUserInfo.Schemes"/>.
         /// </summary>
-        /// <param name="providers">Providers.</param>
+        /// <param name="schemes">The schemes.</param>
         /// <returns>A JArray of {name:..., lastUsed:...} objects.</returns>
-        protected virtual JArray ToProvidersJArray(IEnumerable<IUserProviderInfo> providers)
-                    => new JArray(providers.Select(
+        protected virtual JArray ToSchemesJArray(IEnumerable<IUserSchemeInfo> schemes)
+                    => new JArray(schemes.Select(
                                     p => new JObject(new JProperty("name", p.Name), new JProperty("lastUsed", p.LastUsed))));
 
         /// <summary>
@@ -210,8 +210,8 @@ namespace CK.Auth
         /// </summary>
         /// <param name="a">Jarray to convert.</param>
         /// <returns>An array of providers.</returns>
-        protected virtual IUserProviderInfo[] FromProvidersJArray(JArray a)
-                    => a.Select(p => new StdUserProviderInfo((string)p["name"], (DateTime)p["lastUsed"])).ToArray();
+        protected virtual IUserSchemeInfo[] FromSchemesJArray(JArray a)
+                    => a.Select(p => new StdUserSchemeInfo((string)p["name"], (DateTime)p["lastUsed"])).ToArray();
 
         /// <summary>
         /// Implements <see cref="IUserInfoType.FromJObject(JObject)"/>.
@@ -224,13 +224,13 @@ namespace CK.Auth
             var userId = (int)o[UserIdKeyType];
             if (userId == 0) return _anonymous.Value;
             var userName = (string)o[UserNameKeyType];
-            var providers = o[ProvidersKeyType].Select(p => new StdUserProviderInfo((string)p["name"], (DateTime)p["lastUsed"])).ToArray();
-            return new StdUserInfo(userId, userName, providers);
+            var schemes = o[SchemesKeyType].Select(p => new StdUserSchemeInfo((string)p["name"], (DateTime)p["lastUsed"])).ToArray();
+            return new StdUserInfo(userId, userName, schemes);
         }
 
         /// <summary>
         /// Implements <see cref="IUserInfoType.ToClaims(IUserInfo)"/> by returning 
-        /// three claims (<see cref="UserNameKeyType"/>, <see cref="UserIdKeyType"/> and <see cref="ProvidersKeyType"/>)
+        /// three claims (<see cref="UserNameKeyType"/>, <see cref="UserIdKeyType"/> and <see cref="SchemesKeyType"/>)
         /// in the list.
         /// </summary>
         /// <param name="info">The user information.</param>
@@ -241,7 +241,7 @@ namespace CK.Auth
             var list = new List<Claim>();
             list.Add(new Claim(UserNameKeyType, info.UserName));
             list.Add(new Claim(UserIdKeyType, info.UserId.ToString()));
-            list.Add(new Claim(ProvidersKeyType, ToProvidersJArray(info.Providers).ToString(Formatting.None)));
+            list.Add(new Claim(SchemesKeyType, ToSchemesJArray(info.Schemes).ToString(Formatting.None)));
             return list;
         }
 
@@ -250,12 +250,12 @@ namespace CK.Auth
         /// </summary>
         /// <param name="userId">The value read from <see cref="UserIdKeyType"/> claim.</param>
         /// <param name="userName">The value read from <see cref="UserNameKeyType"/> claim.</param>
-        /// <param name="providers">The Array read from <see cref="ProvidersKeyType"/> claim.</param>
+        /// <param name="schemes">The Array read from <see cref="SchemesKeyType"/> claim.</param>
         /// <param name="claims">All the Claims (including the 3 already extracted ones).</param>
         /// <returns>The user information.</returns>
-        protected virtual IUserInfo UserInfoFromClaims(int userId, string userName, IUserProviderInfo[] providers, IEnumerable<Claim> claims)
+        protected virtual IUserInfo UserInfoFromClaims(int userId, string userName, IUserSchemeInfo[] schemes, IEnumerable<Claim> claims)
         {
-            return new StdUserInfo(userId, userName, providers);
+            return new StdUserInfo(userId, userName, schemes);
         }
 
         /// <summary>
@@ -275,11 +275,11 @@ namespace CK.Auth
         /// <param name="r">The binary reader.</param>
         /// <param name="userId">Already read user identifier.</param>
         /// <param name="name">Already read user name.</param>
-        /// <param name="providers">Already read providers.</param>
+        /// <param name="schemes">Already read providers.</param>
         /// <returns>The user info.</returns>
-        protected virtual IUserInfo ReadUserInfoRemainder(BinaryReader r, int userId, string name, IUserProviderInfo[] providers)
+        protected virtual IUserInfo ReadUserInfoRemainder(BinaryReader r, int userId, string name, IUserSchemeInfo[] schemes)
         {
-            return new StdUserInfo(userId, name, providers);
+            return new StdUserInfo(userId, name, schemes);
         }
 
         #endregion

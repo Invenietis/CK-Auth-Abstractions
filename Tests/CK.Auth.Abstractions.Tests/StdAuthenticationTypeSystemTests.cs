@@ -40,7 +40,7 @@ namespace CK.Auth.Abstractions.Tests
         public void using_StdAuthenticationTypeSystem_to_convert_UserInfo_objects_from_and_to_json()
         {
             var time = new DateTime(2017, 4, 2, 14, 35, 59, DateTimeKind.Utc);
-            var u = _typeSystem.UserInfo.Create(3712, "Albert", new[] { new StdUserProviderInfo("Basic", time) });
+            var u = _typeSystem.UserInfo.Create(3712, "Albert", new[] { new StdUserSchemeInfo("Basic", time) });
             JObject o = _typeSystem.UserInfo.ToJObject(u);
             o["id"].Value<string>().Should().Be("3712");
             o["name"].Value<string>().Should().Be("Albert");
@@ -50,9 +50,9 @@ namespace CK.Auth.Abstractions.Tests
             var u2 = _typeSystem.UserInfo.FromJObject(o);
             u2.UserId.Should().Be(3712);
             u2.UserName.Should().Be("Albert");
-            u2.Providers.Should().HaveCount(1);
-            u2.Providers[0].Name.Should().Be("Basic");
-            u2.Providers[0].LastUsed.Should().Be(time);
+            u2.Schemes.Should().HaveCount(1);
+            u2.Schemes[0].Name.Should().Be("Basic");
+            u2.Schemes[0].LastUsed.Should().Be(time);
         }
 
         [Fact]
@@ -60,8 +60,8 @@ namespace CK.Auth.Abstractions.Tests
         {
             var time1 = DateTime.UtcNow.AddDays(1);
             var time2 = DateTime.UtcNow.AddDays(2);
-            var u1 = _typeSystem.UserInfo.Create(3712, "Albert", new[] { new StdUserProviderInfo("Basic", time1) });
-            var u2 = _typeSystem.UserInfo.Create(12, "Robert", new[] { new StdUserProviderInfo("Google", DateTime.UtcNow), new StdUserProviderInfo("Other", time1) });
+            var u1 = _typeSystem.UserInfo.Create(3712, "Albert", new[] { new StdUserSchemeInfo("Basic", time1) });
+            var u2 = _typeSystem.UserInfo.Create(12, "Robert", new[] { new StdUserSchemeInfo("Google", DateTime.UtcNow), new StdUserSchemeInfo("Other", time1) });
 
             CheckFromTo(new StdAuthenticationInfo(_typeSystem, null, null, null, null));
             CheckFromTo(new StdAuthenticationInfo(_typeSystem, u1, null, null, null));
@@ -109,15 +109,15 @@ namespace CK.Auth.Abstractions.Tests
         public void using_StdAuthenticationTypeSystem_to_convert_UserInfo_objects_from_and_to_Claims()
         {
             var time = new DateTime(2017, 4, 2, 14, 35, 59, DateTimeKind.Utc);
-            var u = new StdUserInfo(3712, "Albert", new[] { new StdUserProviderInfo("Basic", time) });
+            var u = new StdUserInfo(3712, "Albert", new[] { new StdUserSchemeInfo("Basic", time) });
             JObject o = _typeSystem.UserInfo.ToJObject(u);
             List<Claim> c = _typeSystem.UserInfo.ToClaims(u);
             var u2 = _typeSystem.UserInfo.FromClaims(c);
             u2.UserId.Should().Be(3712);
             u2.UserName.Should().Be("Albert");
-            u2.Providers.Should().HaveCount(1);
-            u2.Providers[0].Name.Should().Be("Basic");
-            u2.Providers[0].LastUsed.Should().Be(time);
+            u2.Schemes.Should().HaveCount(1);
+            u2.Schemes[0].Name.Should().Be("Basic");
+            u2.Schemes[0].LastUsed.Should().Be(time);
         }
 
         static void CheckAnonymousValues(IUserInfo anonymous)
@@ -125,7 +125,7 @@ namespace CK.Auth.Abstractions.Tests
             anonymous.Should().NotBeNull();
             anonymous.UserId.Should().Be(0);
             anonymous.UserName.Should().BeEmpty();
-            anonymous.Providers.Should().BeEmpty();
+            anonymous.Schemes.Should().BeEmpty();
         }
     }
 }
