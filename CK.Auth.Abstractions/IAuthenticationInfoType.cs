@@ -27,7 +27,7 @@ namespace CK.Auth
         /// <param name="user">The user (and actual user). Can be null.</param>
         /// <param name="expires">When null or already expired, Level is <see cref="AuthLevel.Unsafe"/>.</param>
         /// <param name="criticalExpires">Optional critical expiration.</param>
-        IAuthenticationInfo Create(IUserInfo user, DateTime? expires = null, DateTime? criticalExpires = null);
+        IAuthenticationInfo Create( IUserInfo user, DateTime? expires = null, DateTime? criticalExpires = null );
 
         /// <summary>
         /// Creates a <see cref="IAuthenticationInfo"/> from a ClaimsIdentity.
@@ -58,7 +58,7 @@ namespace CK.Auth
         /// the expirations if they exist and handle impersonation thanks to the <see cref="ClaimsIdentity.Actor"/>. 
         /// </param>
         /// <returns>The claims or null if <paramref name="info"/> is null.</returns>
-        ClaimsIdentity ToClaimsIdentity( IAuthenticationInfo info, bool userInfoOnly);
+        ClaimsIdentity ToClaimsIdentity( IAuthenticationInfo info, bool userInfoOnly );
 
         /// <summary>
         /// Exports a <see cref="IAuthenticationInfo"/> as a JObject.
@@ -74,14 +74,14 @@ namespace CK.Auth
         /// </summary>
         /// <param name="w">The binary writer.</param>
         /// <param name="info">The authentication info to write. Can be null.</param>
-        void Write(BinaryWriter w, IAuthenticationInfo info);
+        void Write( BinaryWriter w, IAuthenticationInfo info );
 
         /// <summary>
         /// Reads a authentication information in binary format.
         /// </summary>
         /// <param name="r">The binary reader.</param>
         /// <returns>The authentication info. Can be null.</returns>
-        IAuthenticationInfo Read(BinaryReader r);
+        IAuthenticationInfo Read( BinaryReader r );
 
 
     }

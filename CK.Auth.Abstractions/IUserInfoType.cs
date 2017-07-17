@@ -22,7 +22,7 @@ namespace CK.Auth
         /// <param name="userId">The user identifier.</param>
         /// <param name="userName">The user name. Can be null or empty if and only if <paramref name="userId"/> is 0.</param>
         /// <param name="schemes">The schemes list.</param>
-        IUserInfo Create(int userId, string userName, IReadOnlyList<IUserSchemeInfo> schemes = null);
+        IUserInfo Create( int userId, string userName, IReadOnlyList<IUserSchemeInfo> schemes = null );
 
         /// <summary>
         /// Exports a <see cref="IUserInfo"/> to a list of claims.
@@ -68,6 +68,6 @@ namespace CK.Auth
         /// </summary>
         /// <param name="r">The binary reader.</param>
         /// <returns>The user info. Can be null.</returns>
-        IUserInfo Read(BinaryReader r);
+        IUserInfo Read( BinaryReader r );
     }
 }
