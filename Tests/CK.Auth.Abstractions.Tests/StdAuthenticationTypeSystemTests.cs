@@ -44,9 +44,9 @@ namespace CK.Auth.Abstractions.Tests
             JObject o = _typeSystem.UserInfo.ToJObject(u);
             o["id"].Value<string>().Should().Be("3712");
             o["name"].Value<string>().Should().Be("Albert");
-            ((JArray)o["providers"]).Should().HaveCount(1);
-            o["providers"][0]["name"].Value<string>().Should().Be("Basic");
-            o["providers"][0]["lastUsed"].Value<DateTime>().Should().Be(time);
+            ((JArray)o["schemes"]).Should().HaveCount(1);
+            o["schemes"][0]["name"].Value<string>().Should().Be("Basic");
+            o["schemes"][0]["lastUsed"].Value<DateTime>().Should().Be(time);
             var u2 = _typeSystem.UserInfo.FromJObject(o);
             u2.UserId.Should().Be(3712);
             u2.UserName.Should().Be("Albert");

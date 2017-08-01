@@ -49,14 +49,13 @@ namespace CK.Auth
         public const string UserIdKeyType = "id";
 
         /// <summary>
-        /// The name of the <see cref="IUserInfo.Providers"/> for the <see cref="Claim.Type"/>
+        /// The name of the <see cref="IUserInfo.Schemes"/> for the <see cref="Claim.Type"/>
         /// and JObject property name.
         /// </summary>
-        public const string SchemesKeyType = "providers";
+        public const string SchemesKeyType = "schemes";
 
         /// <summary>
-        /// The name of the <see cref="IAuthenticationInfo.Level"/> for the <see cref="Claim.Type"/>
-        /// and JObject property name.
+        /// The name of the <see cref="IAuthenticationInfo.Level"/> for the <see cref="Claim.Type"/>.
         /// </summary>
         public const string AuthLevelKeyType = "acr";
 
