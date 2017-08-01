@@ -20,7 +20,7 @@ namespace CK.Auth
         {
             UserId = userId;
             UserName = userName ?? string.Empty;
-            if ((UserName.Length == 0) != (userId == 0)) throw new ArgumentException($"{userName} is empty if and only {userId} is 0.");
+            if( (UserName.Length == 0) != (userId == 0) ) throw new ArgumentException( $"{userName} is empty if and only {userId} is 0." );
             Schemes = schemes ?? _emptySchemes;
         }
 

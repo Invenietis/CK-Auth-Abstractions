@@ -19,11 +19,11 @@ namespace CK.Auth
         /// <param name="lastUsed">Last used must be a <see cref="DateTimeKind.Utc"/> or <see cref="DateTimeKind.Unspecified"/> date.</param>
         public StdUserSchemeInfo( string name, DateTime lastUsed )
         {
-            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException();
-            if (lastUsed.Kind == DateTimeKind.Local) throw new ArgumentException("Kind must be Utc or Unspecified, not Local.");
+            if( string.IsNullOrWhiteSpace( name ) ) throw new ArgumentException();
+            if( lastUsed.Kind == DateTimeKind.Local ) throw new ArgumentException( "Kind must be Utc or Unspecified, not Local." );
             Name = name;
-            LastUsed = lastUsed.Kind == DateTimeKind.Unspecified 
-                            ? DateTime.SpecifyKind( lastUsed, DateTimeKind.Utc ) 
+            LastUsed = lastUsed.Kind == DateTimeKind.Unspecified
+                            ? DateTime.SpecifyKind( lastUsed, DateTimeKind.Utc )
                             : lastUsed;
         }
 

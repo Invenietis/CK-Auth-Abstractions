@@ -8,7 +8,7 @@ namespace CK.Auth
     /// Standard immutable implementation of <see cref="IAuthenticationInfo"/>.
     /// </summary>
     public class StdAuthenticationInfo : IAuthenticationInfo
-    { 
+    {
         readonly IUserInfo _actualUser;
         readonly IUserInfo _user;
         readonly DateTime? _expires;
@@ -23,8 +23,8 @@ namespace CK.Auth
         /// <param name="user">The user (and actual user). Can be null.</param>
         /// <param name="expires">Expiration of authentication.</param>
         /// <param name="criticalExpires">Expiration of critical authentication.</param>
-        public StdAuthenticationInfo(IAuthenticationTypeSystem typeSystem, IUserInfo user, DateTime? expires = null, DateTime? criticalExpires = null)
-            : this(typeSystem, user, null, expires, criticalExpires, DateTime.UtcNow)
+        public StdAuthenticationInfo( IAuthenticationTypeSystem typeSystem, IUserInfo user, DateTime? expires = null, DateTime? criticalExpires = null )
+            : this( typeSystem, user, null, expires, criticalExpires, DateTime.UtcNow )
         {
         }
 
@@ -36,8 +36,8 @@ namespace CK.Auth
         /// <param name="user">The user. Can be null.</param>
         /// <param name="expires">Expiration must occur after <see cref="DateTime.UtcNow"/> otherwise <see cref="Level"/> is <see cref="AuthLevel.Unsafe"/>.</param>
         /// <param name="criticalExpires">Expiration must occur after DateTime.UtcNow in order for <see cref="Level"/> to be <see cref="AuthLevel.Critical"/>.</param>
-        public StdAuthenticationInfo(IAuthenticationTypeSystem typeSystem, IUserInfo actualUser, IUserInfo user, DateTime? expires, DateTime? criticalExpires)
-            : this(typeSystem, actualUser, user, expires, criticalExpires, DateTime.UtcNow)
+        public StdAuthenticationInfo( IAuthenticationTypeSystem typeSystem, IUserInfo actualUser, IUserInfo user, DateTime? expires, DateTime? criticalExpires )
+            : this( typeSystem, actualUser, user, expires, criticalExpires, DateTime.UtcNow )
         {
         }
 
@@ -51,20 +51,20 @@ namespace CK.Auth
         /// <param name="expires">Expiration must occur after <paramref name="utcNow"/> otherwise <see cref="Level"/> is <see cref="AuthLevel.Unsafe"/>.</param>
         /// <param name="criticalExpires">Expiration must occur after <paramref name="utcNow"/> in order for <see cref="Level"/> to be <see cref="AuthLevel.Critical"/>.</param>
         /// <param name="utcNow">The "current" date and time.</param>
-        public StdAuthenticationInfo(IAuthenticationTypeSystem typeSystem, IUserInfo actualUser, IUserInfo user, DateTime? expires, DateTime? criticalExpires, DateTime utcNow)
+        public StdAuthenticationInfo( IAuthenticationTypeSystem typeSystem, IUserInfo actualUser, IUserInfo user, DateTime? expires, DateTime? criticalExpires, DateTime utcNow )
         {
-            if (typeSystem == null ) throw new ArgumentNullException(nameof(typeSystem));
-            if (user == null)
+            if( typeSystem == null ) throw new ArgumentNullException( nameof( typeSystem ) );
+            if( user == null )
             {
-                if (actualUser != null) user = actualUser;
+                if( actualUser != null ) user = actualUser;
                 else user = actualUser = typeSystem.UserInfo.Anonymous;
             }
             else
             {
-                if (actualUser == null) actualUser = user;
+                if( actualUser == null ) actualUser = user;
             }
             AuthLevel level;
-            if (actualUser.UserId == 0)
+            if( actualUser.UserId == 0 )
             {
                 user = actualUser;
                 expires = null;
@@ -73,17 +73,17 @@ namespace CK.Auth
             }
             else
             {
-                if (actualUser != user && actualUser.UserId == user.UserId)
+                if( actualUser != user && actualUser.UserId == user.UserId )
                 {
                     user = actualUser;
                 }
                 if( expires.HasValue )
                 {
-                    if (expires.Value.Kind == DateTimeKind.Local) throw new ArgumentException("Kind must be Utc or Unspecified, not Local.", nameof(expires));
-                    if (expires.Value <= utcNow) expires = null;
-                    else if( expires.Value.Kind == DateTimeKind.Unspecified ) expires = DateTime.SpecifyKind(expires.Value, DateTimeKind.Utc );
+                    if( expires.Value.Kind == DateTimeKind.Local ) throw new ArgumentException( "Kind must be Utc or Unspecified, not Local.", nameof( expires ) );
+                    if( expires.Value <= utcNow ) expires = null;
+                    else if( expires.Value.Kind == DateTimeKind.Unspecified ) expires = DateTime.SpecifyKind( expires.Value, DateTimeKind.Utc );
                 }
-                if (!expires.HasValue)
+                if( !expires.HasValue )
                 {
                     expires = null;
                     criticalExpires = null;
@@ -91,14 +91,14 @@ namespace CK.Auth
                 }
                 else
                 {
-                    if (criticalExpires.HasValue)
+                    if( criticalExpires.HasValue )
                     {
-                        if (criticalExpires.Value.Kind == DateTimeKind.Local) throw new ArgumentException("Kind must be Utc or Unspecified, not Local.", nameof(criticalExpires));
-                        if (criticalExpires.Value <= utcNow) criticalExpires = null;
+                        if( criticalExpires.Value.Kind == DateTimeKind.Local ) throw new ArgumentException( "Kind must be Utc or Unspecified, not Local.", nameof( criticalExpires ) );
+                        if( criticalExpires.Value <= utcNow ) criticalExpires = null;
                         else
                         {
-                            if (criticalExpires.Value.Kind == DateTimeKind.Unspecified) criticalExpires = DateTime.SpecifyKind(criticalExpires.Value, DateTimeKind.Utc);
-                            if (criticalExpires.Value > expires.Value) criticalExpires = expires;
+                            if( criticalExpires.Value.Kind == DateTimeKind.Unspecified ) criticalExpires = DateTime.SpecifyKind( criticalExpires.Value, DateTimeKind.Utc );
+                            if( criticalExpires.Value > expires.Value ) criticalExpires = expires;
                         }
                     }
                     level = criticalExpires.HasValue ? AuthLevel.Critical : AuthLevel.Normal;
@@ -164,28 +164,28 @@ namespace CK.Auth
         /// or <see cref="CriticalExpires"/> are greater than <see cref="DateTime.UtcNow"/>.
         /// </summary>
         /// <returns>This or an updated authentication information.</returns>
-        public StdAuthenticationInfo CheckExpiration() => CheckExpiration(DateTime.UtcNow);
+        public StdAuthenticationInfo CheckExpiration() => CheckExpiration( DateTime.UtcNow );
 
-        IAuthenticationInfo IAuthenticationInfo.ClearImpersonation(DateTime utcNow) => ClearImpersonation(utcNow);
+        IAuthenticationInfo IAuthenticationInfo.ClearImpersonation( DateTime utcNow ) => ClearImpersonation( utcNow );
 
-        IAuthenticationInfo IAuthenticationInfo.Impersonate(IUserInfo user, DateTime utcNow) => Impersonate(user, utcNow);
+        IAuthenticationInfo IAuthenticationInfo.Impersonate( IUserInfo user, DateTime utcNow ) => Impersonate( user, utcNow );
 
-        IAuthenticationInfo IAuthenticationInfo.CheckExpiration(DateTime utcNow) => CheckExpiration(utcNow);
+        IAuthenticationInfo IAuthenticationInfo.CheckExpiration( DateTime utcNow ) => CheckExpiration( utcNow );
 
-        IAuthenticationInfo IAuthenticationInfo.SetExpires(DateTime? expires, DateTime utcNow) => SetExpires(expires, utcNow);
+        IAuthenticationInfo IAuthenticationInfo.SetExpires( DateTime? expires, DateTime utcNow ) => SetExpires( expires, utcNow );
 
-        IAuthenticationInfo IAuthenticationInfo.SetCriticalExpires(DateTime? criticalExpires, DateTime utcNow) => SetCriticalExpires(criticalExpires, utcNow);
+        IAuthenticationInfo IAuthenticationInfo.SetCriticalExpires( DateTime? criticalExpires, DateTime utcNow ) => SetCriticalExpires( criticalExpires, utcNow );
 
         /// <summary>
         /// Removes impersonation if any (the <see cref="ActualUser"/> becomes the <see cref="User"/>).
         /// </summary>
         /// <param name="utcNow">The "current" date and time to challenge.</param>
         /// <returns>This or a new authentication info object.</returns>
-        public StdAuthenticationInfo ClearImpersonation(DateTime utcNow)
+        public StdAuthenticationInfo ClearImpersonation( DateTime utcNow )
         {
-            return IsImpersonated 
-                    ? Clone(_actualUser, _actualUser, _expires, _criticalExpires, utcNow)
-                    : CheckExpiration(utcNow);
+            return IsImpersonated
+                    ? Clone( _actualUser, _actualUser, _expires, _criticalExpires, utcNow )
+                    : CheckExpiration( utcNow );
         }
 
         /// <summary>
@@ -195,13 +195,13 @@ namespace CK.Auth
         /// <param name="user">The new impersonated user.</param>
         /// <param name="utcNow">The "current" date and time to challenge.</param>
         /// <returns>This or a new new authentication info object.</returns>
-        public StdAuthenticationInfo Impersonate(IUserInfo user, DateTime utcNow)
+        public StdAuthenticationInfo Impersonate( IUserInfo user, DateTime utcNow )
         {
-            if (user == null) user = _typeSystem.UserInfo.Anonymous;
-            if (_actualUser.UserId == 0) throw new InvalidOperationException();
+            if( user == null ) user = _typeSystem.UserInfo.Anonymous;
+            if( _actualUser.UserId == 0 ) throw new InvalidOperationException();
             return _user != user
-                    ? Clone(_actualUser, user, _expires, _criticalExpires, utcNow)
-                    : CheckExpiration(utcNow);
+                    ? Clone( _actualUser, user, _expires, _criticalExpires, utcNow )
+                    : CheckExpiration( utcNow );
         }
 
         /// <summary>
@@ -210,22 +210,22 @@ namespace CK.Auth
         /// </summary>
         /// <param name="utcNow">The "current" date and time to challenge.</param>
         /// <returns>This or an updated authentication information.</returns>
-        public StdAuthenticationInfo CheckExpiration(DateTime utcNow)
+        public StdAuthenticationInfo CheckExpiration( DateTime utcNow )
         {
-            if (utcNow.Kind != DateTimeKind.Utc) throw new ArgumentException("Kind must be Utc.", nameof(utcNow));
+            if( utcNow.Kind != DateTimeKind.Utc ) throw new ArgumentException( "Kind must be Utc.", nameof( utcNow ) );
             var level = _level;
-            if (level < AuthLevel.Normal
-                || (level == AuthLevel.Critical && _criticalExpires.Value > utcNow))
+            if( level < AuthLevel.Normal
+                || (level == AuthLevel.Critical && _criticalExpires.Value > utcNow) )
             {
                 return this;
             }
-            if (_expires.Value > utcNow)
+            if( _expires.Value > utcNow )
             {
-                if (level == AuthLevel.Normal) return this;
-                Debug.Assert(level == AuthLevel.Critical);
-                return Clone(_actualUser, _user, _expires, null, utcNow);
+                if( level == AuthLevel.Normal ) return this;
+                Debug.Assert( level == AuthLevel.Critical );
+                return Clone( _actualUser, _user, _expires, null, utcNow );
             }
-            return Clone(_actualUser, _user, null, null, utcNow);
+            return Clone( _actualUser, _user, null, null, utcNow );
         }
 
         /// <summary>
@@ -235,11 +235,11 @@ namespace CK.Auth
         /// <param name="expires">The new <see cref="Expires"/> value.</param>
         /// <param name="utcNow">The "current" date and time to challenge.</param>
         /// <returns>The updated authentication info.</returns>
-        public StdAuthenticationInfo SetExpires(DateTime? expires, DateTime utcNow)
+        public StdAuthenticationInfo SetExpires( DateTime? expires, DateTime utcNow )
         {
             return expires != _expires
-                    ? Clone(_actualUser, _user, expires, _criticalExpires, utcNow)
-                    : CheckExpiration(utcNow);
+                    ? Clone( _actualUser, _user, expires, _criticalExpires, utcNow )
+                    : CheckExpiration( utcNow );
         }
 
         /// <summary>
@@ -251,15 +251,15 @@ namespace CK.Auth
         /// <param name="criticalExpires">The new CriticalExpires value.</param>
         /// <param name="utcNow">The "current" date and time to challenge.</param>
         /// <returns>The updated authentication info.</returns>
-        public StdAuthenticationInfo SetCriticalExpires(DateTime? criticalExpires, DateTime utcNow)
+        public StdAuthenticationInfo SetCriticalExpires( DateTime? criticalExpires, DateTime utcNow )
         {
-            if( criticalExpires == _criticalExpires ) return CheckExpiration(utcNow);
+            if( criticalExpires == _criticalExpires ) return CheckExpiration( utcNow );
             DateTime? newExp = _expires;
-            if( criticalExpires.HasValue && (!newExp.HasValue || newExp.Value < criticalExpires.Value ) )
+            if( criticalExpires.HasValue && (!newExp.HasValue || newExp.Value < criticalExpires.Value) )
             {
                 newExp = criticalExpires;
             }
-            return Clone(_actualUser, _user, newExp, criticalExpires, utcNow);
+            return Clone( _actualUser, _user, newExp, criticalExpires, utcNow );
         }
 
         /// <summary>
@@ -274,9 +274,9 @@ namespace CK.Auth
         /// <param name="criticalExpires">The new critical expires time.</param>
         /// <param name="utcNow">The "current" date and time to challenge.</param>
         /// <returns>New authentication info.</returns>
-        protected virtual StdAuthenticationInfo Clone(IUserInfo actualUser, IUserInfo user, DateTime? expires, DateTime? criticalExpires, DateTime utcNow )
+        protected virtual StdAuthenticationInfo Clone( IUserInfo actualUser, IUserInfo user, DateTime? expires, DateTime? criticalExpires, DateTime utcNow )
         {
-            return new StdAuthenticationInfo(_typeSystem, actualUser, user, expires, criticalExpires, utcNow);
+            return new StdAuthenticationInfo( _typeSystem, actualUser, user, expires, criticalExpires, utcNow );
         }
     }
 }

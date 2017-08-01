@@ -63,7 +63,7 @@ namespace CK.Auth
         /// </summary>
         /// <param name="utcNow">The "current" date and time to challenge.</param>
         /// <returns>This or an updated authentication information.</returns>
-        IAuthenticationInfo CheckExpiration(DateTime utcNow);
+        IAuthenticationInfo CheckExpiration( DateTime utcNow );
 
         /// <summary>
         /// Returns a new authentication information with <see cref="Expires"/> sets
@@ -72,7 +72,7 @@ namespace CK.Auth
         /// <param name="expires">The new <see cref="Expires"/> value.</param>
         /// <param name="utcNow">The "current" date and time to challenge.</param>
         /// <returns>The updated authentication info.</returns>
-        IAuthenticationInfo SetExpires(DateTime? expires, DateTime utcNow);
+        IAuthenticationInfo SetExpires( DateTime? expires, DateTime utcNow );
 
         /// <summary>
         /// Returns a new authentication information with <see cref="CriticalExpires"/> sets
@@ -83,14 +83,14 @@ namespace CK.Auth
         /// <param name="criticalExpires">The new CriticalExpires value.</param>
         /// <param name="utcNow">The "current" date and time to challenge.</param>
         /// <returns>The updated authentication info.</returns>
-        IAuthenticationInfo SetCriticalExpires(DateTime? criticalExpires, DateTime utcNow);
+        IAuthenticationInfo SetCriticalExpires( DateTime? criticalExpires, DateTime utcNow );
 
         /// <summary>
         /// Removes impersonation if any (the <see cref="ActualUser"/> becomes the <see cref="User"/>).
         /// </summary>
         /// <param name="utcNow">The "current" date and time to challenge.</param>
         /// <returns>This or a new authentication info object.</returns>
-        IAuthenticationInfo ClearImpersonation(DateTime utcNow);
+        IAuthenticationInfo ClearImpersonation( DateTime utcNow );
 
         /// <summary>
         /// Impersonates this <see cref="ActualUser"/>: the <see cref="User"/> will be the new one.
@@ -99,7 +99,7 @@ namespace CK.Auth
         /// <param name="user">The new impersonated user.</param>
         /// <param name="utcNow">The "current" date and time to challenge.</param>
         /// <returns>This or a new new authentication info object.</returns>
-        IAuthenticationInfo Impersonate( IUserInfo user, DateTime utcNow);
+        IAuthenticationInfo Impersonate( IUserInfo user, DateTime utcNow );
 
     }
 }
