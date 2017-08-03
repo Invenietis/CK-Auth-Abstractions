@@ -158,21 +158,29 @@ namespace CK.Auth
 
         IUserInfo IUserInfoType.Read( BinaryReader r )
         {
-            int version = r.ReadInt32();
-            if( version == 0 ) return null;
-            int userId = r.ReadInt32();
-            string name = r.ReadString();
-            int schemeCount = r.ReadInt32();
-            IUserSchemeInfo[] schemes = _emptySchemes;
-            if( schemeCount > 0 )
+            if( r == null ) throw new ArgumentNullException( nameof( r ) );
+            try
             {
-                schemes = new IUserSchemeInfo[schemeCount];
-                for( int i = 0; i < schemeCount; ++i )
+                int version = r.ReadInt32();
+                if( version == 0 ) return null;
+                int userId = r.ReadInt32();
+                string name = r.ReadString();
+                int schemeCount = r.ReadInt32();
+                IUserSchemeInfo[] schemes = _emptySchemes;
+                if( schemeCount > 0 )
                 {
-                    schemes[i] = new StdUserSchemeInfo( r.ReadString(), DateTime.FromBinary( r.ReadInt64() ) );
+                    schemes = new IUserSchemeInfo[schemeCount];
+                    for( int i = 0; i < schemeCount; ++i )
+                    {
+                        schemes[i] = new StdUserSchemeInfo( r.ReadString(), DateTime.FromBinary( r.ReadInt64() ) );
+                    }
                 }
+                return ReadUserInfoRemainder( r, userId, name, schemes );
             }
-            return ReadUserInfoRemainder( r, userId, name, schemes );
+            catch( Exception ex )
+            {
+                throw new InvalidDataException( "Invalid binary format.", ex );
+            }
         }
 
         /// <summary>
@@ -220,11 +228,20 @@ namespace CK.Auth
         protected virtual IUserInfo UserInfoFromJObject( JObject o )
         {
             if( o == null ) return null;
-            var userId = (int)o[UserIdKeyType];
-            if( userId == 0 ) return _anonymous.Value;
-            var userName = (string)o[UserNameKeyType];
-            var schemes = o[SchemesKeyType].Select( p => new StdUserSchemeInfo( (string)p["name"], (DateTime)p["lastUsed"] ) ).ToArray();
-            return new StdUserInfo( userId, userName, schemes );
+            try
+            {
+                var userId = (int)o[UserIdKeyType];
+                if( userId == 0 ) return _anonymous.Value;
+                var userName = (string)o[UserNameKeyType];
+                // providers was the previous name: gracefully handles it here.
+                JToken t = o[SchemesKeyType] ?? o["providers"];
+                var schemes = t.Select( p => new StdUserSchemeInfo( (string)p["name"], (DateTime)p["lastUsed"] ) ).ToArray();
+                return new StdUserInfo( userId, userName, schemes );
+            }
+            catch( Exception ex )
+            {
+                throw new InvalidDataException( o.ToString( Formatting.None), ex );
+            }
         }
 
         /// <summary>
@@ -319,33 +336,45 @@ namespace CK.Auth
 
         void IAuthenticationInfoType.Write( BinaryWriter w, IAuthenticationInfo info )
         {
+            if( w == null ) throw new ArgumentNullException( nameof( w ) );
             if( info.IsNullOrNone() ) w.Write( 0 );
-            else w.Write( 1 );
-            int flag = 0;
-            if( info.IsImpersonated ) flag |= 1;
-            if( info.Expires.HasValue ) flag |= 2;
-            if( info.CriticalExpires.HasValue ) flag |= 4;
-            w.Write( (byte)flag );
-            UserInfo.Write( w, info.UnsafeUser );
-            if( info.IsImpersonated ) UserInfo.Write( w, info.UnsafeActualUser );
-            if( info.Expires.HasValue ) w.Write( info.Expires.Value.ToBinary() );
-            if( info.CriticalExpires.HasValue ) w.Write( info.CriticalExpires.Value.ToBinary() );
-            WriteAuthenticationInfoRemainder( w, info );
+            else
+            {
+                w.Write( 1 );
+                int flag = 0;
+                if( info.IsImpersonated ) flag |= 1;
+                if( info.Expires.HasValue ) flag |= 2;
+                if( info.CriticalExpires.HasValue ) flag |= 4;
+                w.Write( (byte)flag );
+                UserInfo.Write( w, info.UnsafeUser );
+                if( info.IsImpersonated ) UserInfo.Write( w, info.UnsafeActualUser );
+                if( info.Expires.HasValue ) w.Write( info.Expires.Value.ToBinary() );
+                if( info.CriticalExpires.HasValue ) w.Write( info.CriticalExpires.Value.ToBinary() );
+                WriteAuthenticationInfoRemainder( w, info );
+            }
         }
 
         IAuthenticationInfo IAuthenticationInfoType.Read( BinaryReader r )
         {
-            int version = r.ReadInt32();
-            if( version == 0 ) return null;
-            int flags = r.ReadByte();
-            IUserInfo user = UserInfo.Read( r );
-            IUserInfo actualUser = null;
-            DateTime? expires = null;
-            DateTime? criticalExpires = null;
-            if( (flags & 1) != 0 ) actualUser = UserInfo.Read( r );
-            if( (flags & 2) != 0 ) expires = DateTime.FromBinary( r.ReadInt64() );
-            if( (flags & 4) != 0 ) criticalExpires = DateTime.FromBinary( r.ReadInt64() );
-            return ReadAuthenticationInfoRemainder( r, actualUser, user, expires, criticalExpires );
+            if( r == null ) throw new ArgumentNullException( nameof( r ) );
+            try
+            {
+                int version = r.ReadInt32();
+                if( version == 0 ) return null;
+                int flags = r.ReadByte();
+                IUserInfo user = UserInfo.Read( r );
+                IUserInfo actualUser = null;
+                DateTime? expires = null;
+                DateTime? criticalExpires = null;
+                if( (flags & 1) != 0 ) actualUser = UserInfo.Read( r );
+                if( (flags & 2) != 0 ) expires = DateTime.FromBinary( r.ReadInt64() );
+                if( (flags & 4) != 0 ) criticalExpires = DateTime.FromBinary( r.ReadInt64() );
+                return ReadAuthenticationInfoRemainder( r, actualUser, user, expires, criticalExpires );
+            }
+            catch( Exception ex )
+            {
+                throw new InvalidDataException( "Invalid binary format.", ex );
+            }
         }
 
         /// <summary>
@@ -384,11 +413,18 @@ namespace CK.Auth
         protected virtual IAuthenticationInfo AuthenticationInfoFromJObject( JObject o )
         {
             if( o == null ) return null;
-            var user = UserInfoFromJObject( (JObject)o[UserKeyType] );
-            var actualUser = UserInfoFromJObject( (JObject)o[ActualUserKeyType] );
-            var expires = (DateTime?)o[ExpirationKeyType];
-            var criticalExpires = (DateTime?)o[CriticalExpirationKeyType];
-            return new StdAuthenticationInfo( this, actualUser, user, expires, criticalExpires );
+            try
+            {
+                var user = UserInfoFromJObject( (JObject)o[UserKeyType] );
+                var actualUser = UserInfoFromJObject( (JObject)o[ActualUserKeyType] );
+                var expires = (DateTime?)o[ExpirationKeyType];
+                var criticalExpires = (DateTime?)o[CriticalExpirationKeyType];
+                return new StdAuthenticationInfo( this, actualUser, user, expires, criticalExpires );
+            }
+            catch( Exception ex )
+            {
+                throw new InvalidDataException( o.ToString( Formatting.None ), ex );
+            }
         }
 
         /// <summary>
