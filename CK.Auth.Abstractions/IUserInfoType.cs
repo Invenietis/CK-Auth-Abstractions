@@ -51,23 +51,31 @@ namespace CK.Auth
         /// <summary>
         /// Creates a <see cref="IUserInfo"/> from a JObject.
         /// Must return null if <paramref name="o"/> is null.
+        /// Must throw <see cref="InvalidDataException"/> if the o is not valid.
         /// </summary>
         /// <param name="o">The Json object.</param>
         /// <returns>The extracted user info or null if <paramref name="o"/> is null.</returns>
+        /// <exception cref="InvalidDataException">
+        /// Whenever the object is not in the expected format.
+        /// </exception>
         IUserInfo FromJObject( JObject o );
 
         /// <summary>
         /// Writes the user information in binary format.
         /// </summary>
-        /// <param name="w">The binary writer.</param>
+        /// <param name="w">The binary writer (must not be null).</param>
         /// <param name="info">The user info to write. Can be null.</param>
         void Write( BinaryWriter w, IUserInfo info );
 
         /// <summary>
         /// Reads a user information in binary format.
+        /// Must throw <see cref="InvalidDataException"/> if the binary data is not valid.
         /// </summary>
-        /// <param name="r">The binary reader.</param>
+        /// <param name="r">The binary reader (must not be null).</param>
         /// <returns>The user info. Can be null.</returns>
+        /// <exception cref="InvalidDataException">
+        /// Whenever the binary data can not be read.
+        /// </exception>
         IUserInfo Read( BinaryReader r );
     }
 }
