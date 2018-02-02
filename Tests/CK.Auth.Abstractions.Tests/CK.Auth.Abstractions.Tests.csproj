@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\Common\Shared.props" />
 
@@ -9,7 +9,7 @@
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.0' ">
     <OutputType>Exe</OutputType>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <PackageReference Include="FluentAssertions" Version="4.19.4" />
     <ProjectReference Include="..\..\CK.Auth.Abstractions\CK.Auth.Abstractions.csproj" />
@@ -23,5 +23,5 @@
   <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
     <PackageReference Include="NUnit" Version="[2.6.4]" />
   </ItemGroup>
-  
+
 </Project>
