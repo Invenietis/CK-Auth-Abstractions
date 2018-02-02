@@ -1,4 +1,4 @@
-﻿using Cake.Common.Build;
+using Cake.Common.Build;
 using Cake.Common.Diagnostics;
 using Cake.Common.IO;
 using Cake.Common.Solution;
@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using CK.Text;
+using Cake.Common.Tools.NUnit;
 
 namespace CodeCake
 {
@@ -77,66 +78,68 @@ namespace CodeCake
                          projectsToPublish.Select( p => p.Name ).Concatenate() );
                  } );
 
-            Task( "Unit-Testing" )
-                .IsDependentOn( "Check-Repository" )
-                .Does( () =>
-                 {
-                     Cake.DotNetCoreRestore();
-                     var testDirectories = Cake.ParseSolution( solutionFileName )
-                                                             .Projects
-                                                                 .Where( p => p.Name.EndsWith( ".Tests" ) )
-                                                                 .Select( p => p.Path.FullPath );
-                     foreach( var test in testDirectories )
-                     {
-                         Cake.DotNetCoreTest( test );
-                     }
-                 } );
-
             Task( "Clean" )
                 .IsDependentOn( "Check-Repository" )
-                .IsDependentOn( "Unit-Testing" )
                 .Does( () =>
-                 {
-                     Cake.CleanDirectories( projects.Select( p => p.Path.GetDirectory().Combine( "bin" ) ) );
-                     Cake.CleanDirectories( releasesDir );
-                 } );
-
-            Task( "Restore-NuGet-Packages-With-Version" )
-                .WithCriteria( () => gitInfo.IsValid )
-               .IsDependentOn( "Clean" )
-               .Does( () =>
                 {
-                    // https://docs.microsoft.com/en-us/nuget/schema/msbuild-targets
-                    Cake.DotNetCoreRestore( new DotNetCoreRestoreSettings().AddVersionArguments( gitInfo ) );
+                    Cake.CleanDirectories( projects.Select( p => p.Path.GetDirectory().Combine( "bin" ) ) );
+                    Cake.CleanDirectories( releasesDir );
+                    Cake.DeleteFiles( "Tests/**/TestResult*.xml" );
                 } );
 
-            Task( "Build-With-Version" )
-                .WithCriteria( () => gitInfo.IsValid )
-                .IsDependentOn( "Check-Repository" )
-                .IsDependentOn( "Unit-Testing" )
+            Task( "Build" )
                 .IsDependentOn( "Clean" )
-                .IsDependentOn( "Restore-NuGet-Packages-With-Version" )
                 .Does( () =>
-                 {
-                     foreach( var p in projectsToPublish )
-                     {
-                         Cake.DotNetCoreBuild( p.Path.GetDirectory().FullPath,
-                             new DotNetCoreBuildSettings().AddVersionArguments( gitInfo, s =>
-                             {
-                                 s.Configuration = configuration;
-                             } ) );
-                     }
-                 } );
+                {
+                    using( var tempSln = Cake.CreateTemporarySolutionFile( solutionFileName ) )
+                    {
+                        tempSln.ExcludeProjectsFromBuild( "CodeCakeBuilder" );
+                        Cake.DotNetCoreBuild( tempSln.FullPath.FullPath,
+                            new DotNetCoreBuildSettings().AddVersionArguments( gitInfo, s =>
+                            {
+                                s.Configuration = configuration;
+                            } ) );
+                    }
+                } );
+
+            Task( "Unit-Testing" )
+                .IsDependentOn( "Build" )
+                .Does( () =>
+                {
+                    var testDlls = projects.Where( p => p.Name.EndsWith( ".Tests" ) ).Select( p =>
+                                 new
+                                 {
+                                     ProjectPath = p.Path.GetDirectory(),
+                                     NetCoreAppDll = p.Path.GetDirectory().CombineWithFilePath( "bin/" + configuration + "/netcoreapp2.0/" + p.Name + ".dll" ),
+                                     Net461Dll = p.Path.GetDirectory().CombineWithFilePath( "bin/" + configuration + "/net461/" + p.Name + ".dll" ),
+                                 } );
+
+                    foreach( var test in testDlls )
+                    {
+                        if( System.IO.File.Exists( test.Net461Dll.FullPath ) )
+                        {
+                            Cake.Information( "Testing: {0}", test.Net461Dll );
+                            Cake.NUnit( test.Net461Dll.FullPath, new NUnitSettings()
+                            {
+                                Framework = "v4.5"
+                            } );
+                        }
+                        if( System.IO.File.Exists( test.NetCoreAppDll.FullPath ) )
+                        {
+                            Cake.Information( "Testing: {0}", test.NetCoreAppDll );
+                            Cake.DotNetCoreExecute( test.NetCoreAppDll );
+                        }
+                    }
+                } );
 
             Task( "Create-NuGet-Packages" )
                 .WithCriteria( () => gitInfo.IsValid )
-                .IsDependentOn( "Build-With-Version" )
+                .IsDependentOn( "Unit-Testing" )
                 .Does( () =>
                  {
                      Cake.CreateDirectory( releasesDir );
                      foreach( SolutionProject p in projectsToPublish )
                      {
-                         Cake.Warning( p.Path.GetDirectory().FullPath );
                          var s = new DotNetCorePackSettings();
                          s.ArgumentCustomization = args => args.Append( "--include-symbols" );
                          s.NoBuild = true;
@@ -171,22 +174,31 @@ namespace CodeCake
                              || gitInfo.PreReleaseName == "prerelease"
                              || gitInfo.PreReleaseName == "rc" )
                          {
-                             PushNuGetPackages( "NUGET_API_KEY", "https://www.nuget.org/api/v2/package", nugetPackages );
+                             PushNuGetPackages( "MYGET_RELEASE_API_KEY",
+                                                 "https://www.myget.org/F/invenietis-release/api/v2/package",
+                                                 "https://www.myget.org/F/invenietis-release/symbols/api/v2/package",
+                                                 nugetPackages );
                          }
                          else
                          {
                              // An alpha, beta, delta, epsilon, gamma, kappa goes to invenietis-preview.
-                             PushNuGetPackages( "MYGET_PREVIEW_API_KEY", "https://www.myget.org/F/invenietis-preview/api/v2/package", nugetPackages );
+                             PushNuGetPackages( "MYGET_PREVIEW_API_KEY",
+                                                 "https://www.myget.org/F/invenietis-preview/api/v2/package",
+                                                 "https://www.myget.org/F/invenietis-preview/symbols/api/v2/package",
+                                                 nugetPackages );
                          }
                      }
                      else
                      {
                          Debug.Assert( gitInfo.IsValidCIBuild );
-                         PushNuGetPackages( "MYGET_CI_API_KEY", "https://www.myget.org/F/invenietis-ci/api/v2/package", nugetPackages );
+                         PushNuGetPackages( "MYGET_CI_API_KEY",
+                                             "https://www.myget.org/F/invenietis-ci/api/v2/package",
+                                             "https://www.myget.org/F/invenietis-ci/symbols/api/v2/package",
+                                             nugetPackages );
                      }
                      if( Cake.AppVeyor().IsRunningOnAppVeyor )
                      {
-                         Cake.AppVeyor().UpdateBuildVersion( gitInfo.SafeSemVersion );
+                         Cake.AppVeyor().UpdateBuildVersion( gitInfo.SafeNuGetVersion );
                      }
                  } );
 
@@ -196,13 +208,13 @@ namespace CodeCake
 
         }
 
-        void PushNuGetPackages( string apiKeyName, string pushUrl, IEnumerable<FilePath> nugetPackages )
+        void PushNuGetPackages( string apiKeyName, string pushUrl, string pushSymbolUrl, IEnumerable<FilePath> nugetPackages )
         {
             // Resolves the API key.
             var apiKey = Cake.InteractiveEnvironmentVariable( apiKeyName );
             if( string.IsNullOrEmpty( apiKey ) )
             {
-                Cake.Information( "Could not resolve {0}. Push to {1} is skipped.", apiKeyName, pushUrl );
+                Cake.Information( $"Could not resolve {apiKeyName}. Push to {pushUrl} is skipped." );
             }
             else
             {
@@ -212,11 +224,31 @@ namespace CodeCake
                     ApiKey = apiKey,
                     Verbosity = NuGetVerbosity.Detailed
                 };
-
-                foreach( var nupkg in nugetPackages.Where( p => !p.FullPath.EndsWith( ".symbols.nupkg" ) ) )
+                NuGetPushSettings symbSettings = null;
+                if( pushSymbolUrl != null )
                 {
-                    Cake.Information( $"Pushing '{nupkg}' to '{pushUrl}'." );
-                    Cake.NuGetPush( nupkg, settings );
+                    symbSettings = new NuGetPushSettings
+                    {
+                        Source = pushSymbolUrl,
+                        ApiKey = apiKey,
+                        Verbosity = NuGetVerbosity.Detailed
+                    };
+                }
+                foreach( var nupkg in nugetPackages )
+                {
+                    if( !nupkg.FullPath.EndsWith( ".symbols.nupkg" ) )
+                    {
+                        Cake.Information( $"Pushing '{nupkg}' to '{pushUrl}'." );
+                        Cake.NuGetPush( nupkg, settings );
+                    }
+                    else
+                    {
+                        if( symbSettings != null )
+                        {
+                            Cake.Information( $"Pushing Symbols '{nupkg}' to '{pushSymbolUrl}'." );
+                            Cake.NuGetPush( nupkg, symbSettings );
+                        }
+                    }
                 }
             }
         }

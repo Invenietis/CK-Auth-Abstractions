@@ -1,12 +1,13 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
 using System.Security.Claims;
-using Xunit;
+using NUnit.Framework;
 
 namespace CK.Auth.Abstractions.Tests
 {
+    [TestFixture]
     public class StdAuthenticationAndUserInfoTests
     {
         static readonly IAuthenticationTypeSystem _typeSystem;
@@ -28,7 +29,7 @@ namespace CK.Auth.Abstractions.Tests
             _time3 = new DateTime(2003, 4, 4, 14, 35, 59, DateTimeKind.Utc);
         }
 
-        [Fact]
+        [Test]
         public void StdUserInfo_constructor_check_anonymous_constraints()
         {
             Action fail;
@@ -38,7 +39,7 @@ namespace CK.Auth.Abstractions.Tests
             fail.ShouldThrow<ArgumentException>();
         }
 
-        [Fact]
+        [Test]
         public void StdAuthenticationInfo_expirations_can_easily_be_checked()
         {
             // Challenge Expires only.
@@ -79,7 +80,7 @@ namespace CK.Auth.Abstractions.Tests
             }
         }
 
-        [Fact]
+        [Test]
         public void Unsafe_level_constructor_for_IAuthenticationInfo()
         {
             var a = new StdAuthenticationInfo(_typeSystem, _albert);
@@ -91,7 +92,7 @@ namespace CK.Auth.Abstractions.Tests
             a.IsImpersonated.Should().Be(false);
         }
 
-        [Fact]
+        [Test]
         public void Normal_level_constructor_for_IAuthenticationInfo()
         {
             {
@@ -115,7 +116,7 @@ namespace CK.Auth.Abstractions.Tests
             }
         }
 
-        [Fact]
+        [Test]
         public void Critical_level_constructor_for_IAuthenticationInfo()
         {
             {
@@ -153,7 +154,7 @@ namespace CK.Auth.Abstractions.Tests
             }
         }
 
-        [Fact]
+        [Test]
         public void setting_a_valid_CriticalExpires_boosts_the_Expires()
         {
             var a = new StdAuthenticationInfo(_typeSystem, _albert);
@@ -169,7 +170,7 @@ namespace CK.Auth.Abstractions.Tests
             a.Expires.Should().Be(_time2);
         }
 
-        [Fact]
+        [Test]
         public void setting_an_expired_CriticalExpires_does_not_change_the_Expires_iif_it_is_still_valid()
         {
             var a = new StdAuthenticationInfo(_typeSystem, _albert);
@@ -190,7 +191,7 @@ namespace CK.Auth.Abstractions.Tests
             a.CriticalExpires.Should().Be(null);
         }
 
-        [Fact]
+        [Test]
         public void setting_Expires_impacts_CriticalExpires()
         {
             // Albert's Critical expiration is time2 and its expiration is time3.
@@ -219,7 +220,7 @@ namespace CK.Auth.Abstractions.Tests
             aSetExpiresAfterCritical.CriticalExpires.Should().Be(null);
         }
 
-        [Fact]
+        [Test]
         public void clearing_impersonation_automatically_updates_the_expirations()
         {
             // Albert is impersonated in Robert and its Critical expiration time is time1
@@ -240,7 +241,7 @@ namespace CK.Auth.Abstractions.Tests
         }
 
 
-        [Fact]
+        [Test]
         public void setting_impersonation_automatically_updates_the_expirations()
         {
             // Albert's Critical expiration is time1 and its expiration is time2.
@@ -261,7 +262,7 @@ namespace CK.Auth.Abstractions.Tests
             aSetLater.Level.Should().Be(AuthLevel.Unsafe);
         }
 
-        [Fact]
+        [Test]
         public void impersonation_works_the_same_for_all_levels_except_none()
         {
             {

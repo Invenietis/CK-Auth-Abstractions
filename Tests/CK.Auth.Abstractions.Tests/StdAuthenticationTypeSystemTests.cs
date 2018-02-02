@@ -1,25 +1,26 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Claims;
-using Xunit;
+using NUnit.Framework;
 
 namespace CK.Auth.Abstractions.Tests
 {
+    [TestFixture]
     public class StdAuthenticationTypeSystemTests
     {
         StdAuthenticationTypeSystem _typeSystem = new StdAuthenticationTypeSystem();
 
-        [Fact]
+        [Test]
         public void Anonymous_exists_as_0_with_empty_DisplayName_and_Providers()
         {
             CheckAnonymousValues(_typeSystem.UserInfo.Anonymous);
         }
 
-        [Fact]
+        [Test]
         public void FromClaimsIdentity_handles_only_AuthenticationType_or_AuthenticationTypeSimple_ClaimsIdentity_AuthenticationType()
         {
             var u = _typeSystem.UserInfo.Create(345, "Kilo");
@@ -36,7 +37,7 @@ namespace CK.Auth.Abstractions.Tests
             _typeSystem.AuthenticationInfo.FromClaimsIdentity(other).Should().BeNull();
         }
 
-        [Fact]
+        [Test]
         public void using_StdAuthenticationTypeSystem_to_convert_UserInfo_objects_from_and_to_json()
         {
             var time = new DateTime(2017, 4, 2, 14, 35, 59, DateTimeKind.Utc);
@@ -55,7 +56,7 @@ namespace CK.Auth.Abstractions.Tests
             u2.Schemes[0].LastUsed.Should().Be(time);
         }
 
-        [Fact]
+        [Test]
         public void test_StdAuthenticationInfo_conversion_for_JObject_and_Binary_and_Claims()
         {
             var time1 = DateTime.UtcNow.AddDays(1);
@@ -105,7 +106,7 @@ namespace CK.Auth.Abstractions.Tests
             else o4.ShouldBeEquivalentTo(o);
         }
 
-        [Fact]
+        [Test]
         public void using_StdAuthenticationTypeSystem_to_convert_UserInfo_objects_from_and_to_Claims()
         {
             var time = new DateTime(2017, 4, 2, 14, 35, 59, DateTimeKind.Utc);
