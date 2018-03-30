@@ -33,10 +33,10 @@ namespace CK.Auth.Abstractions.Tests
         public void StdUserInfo_constructor_check_anonymous_constraints()
         {
             Action fail;
-            fail = () => new StdUserInfo(0, "Name for Anonymous");
-            fail.ShouldThrow<ArgumentException>();
-            fail = () => new StdUserInfo(3712, "");
-            fail.ShouldThrow<ArgumentException>();
+            fail = () => new StdUserInfo( 0, "Name for Anonymous" );
+            fail.Should().Throw<ArgumentException>();
+            fail = () => new StdUserInfo( 3712, "" );
+            fail.Should().Throw<ArgumentException>();
         }
 
         [Test]

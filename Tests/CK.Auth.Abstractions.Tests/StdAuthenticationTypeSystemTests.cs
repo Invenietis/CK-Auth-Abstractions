@@ -77,13 +77,13 @@ namespace CK.Auth.Abstractions.Tests
             var j = _typeSystem.AuthenticationInfo.ToJObject(o);
             var o2 = _typeSystem.AuthenticationInfo.FromJObject(j);
             if (o.IsNullOrNone()) o2.Should().Match<IAuthenticationInfo>(x => x.IsNullOrNone());
-            else o2.ShouldBeEquivalentTo(o);
+            else o2.Should().BeEquivalentTo(o);
             // For claims, seconds are used for expiration.
             // Using full export.
             var c = _typeSystem.AuthenticationInfo.ToClaimsIdentity(o, userInfoOnly: false);
             var o3 = _typeSystem.AuthenticationInfo.FromClaimsIdentity(c);
             if (o.IsNullOrNone()) o3.Should().Match<IAuthenticationInfo>(x => x.IsNullOrNone());
-            else o3.ShouldBeEquivalentTo(o, options => options
+            else o3.Should().BeEquivalentTo(o, options => options
                         .Using<DateTime>(ctx => ctx.Subject.Should().BeCloseTo(ctx.Expectation, 1000))
                         .WhenTypeIs<DateTime>());
             // Using userInfoOnly export.
@@ -93,7 +93,7 @@ namespace CK.Auth.Abstractions.Tests
             if (userOnly.IsNullOrNone()) oSafe.Should().Match<IAuthenticationInfo>( x => x.IsNullOrNone() );
             else
             {
-                oSafe.ShouldBeEquivalentTo(userOnly, options => options
+                oSafe.Should().BeEquivalentTo(userOnly, options => options
                         .Using<DateTime>(ctx => ctx.Subject.Should().BeCloseTo(ctx.Expectation, 1000))
                         .WhenTypeIs<DateTime>());
             }
@@ -102,8 +102,8 @@ namespace CK.Auth.Abstractions.Tests
             _typeSystem.AuthenticationInfo.Write(new BinaryWriter(m), o);
             m.Position = 0;
             var o4 = _typeSystem.AuthenticationInfo.Read(new BinaryReader(m));
-            if (o.IsNullOrNone()) o4.Should().BeNull();
-            else o4.ShouldBeEquivalentTo(o);
+            if( o.IsNullOrNone() ) o4.Should().BeNull();
+            else o4.Should().BeEquivalentTo(o);
         }
 
         [Test]
