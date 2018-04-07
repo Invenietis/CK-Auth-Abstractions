@@ -63,7 +63,7 @@ namespace CodeCake
                 } );
 
             Task( "Clean" )
-                 .Does( () =>
+                .Does( () =>
                 {
                     Cake.CleanDirectories( projects.Select( p => p.Path.GetDirectory().Combine( "bin" ) ) );
                     Cake.CleanDirectories( releasesDir );
@@ -72,6 +72,7 @@ namespace CodeCake
 
             Task( "Build" )
                 .IsDependentOn( "Clean" )
+                .IsDependentOn( "Check-Repository" )
                 .Does( () =>
                 {
                     StandardSolutionBuild( solutionFileName, gitInfo, globalInfo.BuildConfiguration );
