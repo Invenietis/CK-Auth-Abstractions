@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace CK.Auth
 {
@@ -32,7 +32,9 @@ namespace CK.Auth
         IUserInfo UnsafeUser { get; }
 
         /// <summary>
-        /// Gets the actual user identifier that has been authenticate whatever <see cref="Level"/> is.
+        /// Gets the actual user identifier that has been authenticated whatever <see cref="Level"/> is.
+        /// This enables the impersonation to be effective when the authentication expired so that
+        /// an impersonated administrator/tester can continue to challenge a system in this case.
         /// </summary>
         IUserInfo UnsafeActualUser { get; }
 
