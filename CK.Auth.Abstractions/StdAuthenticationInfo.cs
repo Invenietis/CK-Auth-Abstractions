@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 
 namespace CK.Auth
@@ -134,7 +134,7 @@ namespace CK.Auth
         public IUserInfo UnsafeUser => _user;
 
         /// <summary>
-        /// Gets the actual user identifier that has been authenticate whatever <see cref="Level"/> is.
+        /// Gets the actual user identifier that has been authenticated whatever <see cref="Level"/> is.
         /// </summary>
         public IUserInfo UnsafeActualUser => _actualUser;
 
@@ -190,7 +190,7 @@ namespace CK.Auth
 
         /// <summary>
         /// Impersonates this <see cref="ActualUser"/>: the <see cref="User"/> will be the new one.
-        /// Calling this when <see cref="ActualUser"/> is the anonymous MUST throw an <see cref="InvalidOperationException"/>.
+        /// Calling this when <see cref="ActualUser"/> is the anonymous throws an <see cref="InvalidOperationException"/>.
         /// </summary>
         /// <param name="user">The new impersonated user.</param>
         /// <param name="utcNow">The "current" date and time to challenge.</param>
