@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace CK.Auth
+namespace CK.Auth.StObjSupport
 {
     /// <summary>
     /// Interface marker definition for singleton services for <see cref="IAuthenticationTypeSystem"/>.
