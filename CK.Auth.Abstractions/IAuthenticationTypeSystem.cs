@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 
@@ -8,7 +8,7 @@ namespace CK.Auth
     /// Unifies all types managers related to authentication.
     /// <see cref="StdAuthenticationTypeSystem"/> is an extensible of this type system.
     /// </summary>
-    public interface IAuthenticationTypeSystem
+    public interface IAuthenticationTypeSystem : StObjSupport.ISingletonAmbientService
     {
         /// <summary>
         /// Gets the <see cref="ClaimsIdentity.AuthenticationType"/> used by <see cref="IAuthenticationInfoType.ToClaimsIdentity"/>
