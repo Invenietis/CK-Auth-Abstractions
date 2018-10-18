@@ -17,14 +17,6 @@ namespace CK.Auth
         IUserInfo Anonymous { get; }
 
         /// <summary>
-        /// Creates a new <see cref="IUserInfo"/>.
-        /// </summary>
-        /// <param name="userId">The user identifier.</param>
-        /// <param name="userName">The user name. Can be null or empty if and only if <paramref name="userId"/> is 0.</param>
-        /// <param name="schemes">The schemes list.</param>
-        IUserInfo Create( int userId, string userName, IReadOnlyList<IUserSchemeInfo> schemes = null );
-
-        /// <summary>
         /// Exports a <see cref="IUserInfo"/> to a list of claims.
         /// Must return null if <paramref name="info"/> is null.
         /// </summary>

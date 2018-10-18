@@ -10,7 +10,7 @@ namespace CK.Auth.Abstractions.Tests
     [TestFixture]
     public class StdAuthenticationAndUserInfoTests
     {
-        static readonly IAuthenticationTypeSystem _typeSystem;
+        static readonly StdAuthenticationTypeSystem _typeSystem;
         static readonly IUserInfo _albert;
         static readonly IUserInfo _robert;
         static readonly DateTime _time0;

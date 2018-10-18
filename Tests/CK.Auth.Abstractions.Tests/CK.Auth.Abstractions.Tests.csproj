@@ -7,6 +7,11 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="SpecializedAuth\**" />
+    <EmbeddedResource Remove="SpecializedAuth\**" />
+    <None Remove="SpecializedAuth\**" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="FluentAssertions" Version="5.4.1" />
     <ProjectReference Include="..\..\CK.Auth.Abstractions\CK.Auth.Abstractions.csproj" />
   </ItemGroup>

@@ -43,7 +43,8 @@ namespace CK.Auth
 
         /// <summary>
         /// Initializes a new <see cref="StdAuthenticationInfo"/> with a specific "current" date and time.
-        /// This constructor should be used in specific scenario (unit testing is one of them).
+        /// This constructor is the one that must be ultimately called by any specialization.
+        /// It may be used directly in specific scenario (unit testing is one of them).
         /// </summary>
         /// <param name="typeSystem">The type system. Must not be null.</param>
         /// <param name="actualUser">The actual user. Can be null.</param>
@@ -160,11 +161,9 @@ namespace CK.Auth
         public bool IsImpersonated => _user != _actualUser;
 
         /// <summary>
-        /// Handles expiration checks by returning an updated information whenever <see cref="Expires"/>
-        /// or <see cref="CriticalExpires"/> are greater than <see cref="DateTime.UtcNow"/>.
+        /// Gets the type system of this authentication info.
         /// </summary>
-        /// <returns>This or an updated authentication information.</returns>
-        public StdAuthenticationInfo CheckExpiration() => CheckExpiration( DateTime.UtcNow );
+        protected IAuthenticationTypeSystem TypeSystem => _typeSystem;
 
         IAuthenticationInfo IAuthenticationInfo.ClearImpersonation( DateTime utcNow ) => ClearImpersonation( utcNow );
 
@@ -175,6 +174,14 @@ namespace CK.Auth
         IAuthenticationInfo IAuthenticationInfo.SetExpires( DateTime? expires, DateTime utcNow ) => SetExpires( expires, utcNow );
 
         IAuthenticationInfo IAuthenticationInfo.SetCriticalExpires( DateTime? criticalExpires, DateTime utcNow ) => SetCriticalExpires( criticalExpires, utcNow );
+
+        /// <summary>
+        /// Handles expiration checks by returning an updated information whenever <see cref="Expires"/>
+        /// or <see cref="CriticalExpires"/> are greater than <see cref="DateTime.UtcNow"/>.
+        /// </summary>
+        /// <returns>This or an updated authentication information.</returns>
+        public StdAuthenticationInfo CheckExpiration() => CheckExpiration( DateTime.UtcNow );
+
 
         /// <summary>
         /// Removes impersonation if any (the <see cref="ActualUser"/> becomes the <see cref="User"/>).
