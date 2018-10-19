@@ -7,11 +7,30 @@ using System.IO;
 namespace CK.Auth
 {
     /// <summary>
+    /// Type manager for <see cref="IAuthenticationInfo{TUserInfo}"/>.
     /// Defines "non instance" functionalities (that would have been non extensible static methods) like 
-    /// builders and converters of the <see cref="IAuthenticationInfo"/> type.
+    /// builders and converters of the authentication info type.
     /// </summary>
-    public interface IAuthenticationInfoType
+    public interface IAuthenticationTypeSystem<TAuthInfo,TUserInfo> : StObjSupport.ISingletonAmbientService
+        where TUserInfo : IUserInfo
+        where TAuthInfo : IAuthenticationInfo<TUserInfo>
     {
+        /// <summary>
+        /// Gets the associated <see cref="IUserInfo"/> type manager.
+        /// </summary>
+        IUserInfoType<TUserInfo> UserInfoType { get; }
+
+        /// <summary>
+        /// Gets the <see cref="ClaimsIdentity.AuthenticationType"/> used by <see cref="ToClaimsIdentity"/>
+        /// and enforced by <see cref="FromClaimsIdentity"/>.
+        /// Defaults to "CKA".
+        /// <para>
+        /// When exporting only the safe user claims (ignoring any potential impersonation), "-S" (for Simple) is
+        /// appended (the default is then "CKA-S").
+        /// </para>
+        /// </summary>
+        string ClaimAuthenticationType { get; }
+
         /// <summary>
         /// Gets the non authentication information: it has a <see cref="IAuthenticationInfo.Level"/> equals to
         /// <see cref="AuthLevel.None"/> and is semantically the same as a null reference (all authentication
@@ -19,27 +38,19 @@ namespace CK.Auth
         /// Use <see cref="AuthenticationExtensions.IsNullOrNone(IAuthenticationInfo)">IsNullOrNone</see> to 
         /// easily test both cases.
         /// </summary>
-        IAuthenticationInfo None { get; }
+        TAuthInfo None { get; }
 
         /// <summary>
-        /// Creates a new <see cref="IAuthenticationInfo"/>.
-        /// </summary>
-        /// <param name="user">The user (and actual user). Can be null.</param>
-        /// <param name="expires">When null or already expired, Level is <see cref="AuthLevel.Unsafe"/>.</param>
-        /// <param name="criticalExpires">Optional critical expiration.</param>
-        IAuthenticationInfo Create( IUserInfo user, DateTime? expires = null, DateTime? criticalExpires = null );
-
-        /// <summary>
-        /// Creates a <see cref="IAuthenticationInfo"/> from a ClaimsIdentity.
+        /// Creates a <see cref="TAuthInfo"/> from a ClaimsIdentity.
         /// Must return null if <paramref name="p"/> is null or if <see cref="ClaimsIdentity.AuthenticationType"/>
         /// is not the same as <see cref="IAuthenticationTypeSystem.ClaimAuthenticationType"/> or <see cref="IAuthenticationTypeSystem.ClaimAuthenticationTypeSimple"/>.
         /// </summary>
         /// <param name="p">The claims identity.</param>
         /// <returns>The extracted authentication info or null if <paramref name="p"/> is null.</returns>
-        IAuthenticationInfo FromClaimsIdentity( ClaimsIdentity p );
+        TAuthInfo FromClaimsIdentity( ClaimsIdentity p );
 
         /// <summary>
-        /// Creates a <see cref="IAuthenticationInfo"/> from a JObject.
+        /// Creates a <see cref="TAuthInfo"/> from a JObject.
         /// Must return null if <paramref name="o"/> is null.
         /// Must throw <see cref="InvalidDataException"/> if the o is not valid.
         /// </summary>
@@ -48,10 +59,10 @@ namespace CK.Auth
         /// <exception cref="InvalidDataException">
         /// Whenever the object is not in the expected format.
         /// </exception>
-        IAuthenticationInfo FromJObject( JObject o );
+        TAuthInfo FromJObject( JObject o );
 
         /// <summary>
-        /// Exports a <see cref="IAuthenticationInfo"/> as a claims identity object.
+        /// Exports a <see cref="TAuthInfo"/> as a claims identity object.
         /// Must return null if <paramref name="info"/> is null or none.
         /// (See <see cref="AuthenticationExtensions.IsNullOrNone(IAuthenticationInfo)">IsNullOrNone</see> extension method).
         /// </summary>
@@ -62,23 +73,23 @@ namespace CK.Auth
         /// the expirations if they exist and handle impersonation thanks to the <see cref="ClaimsIdentity.Actor"/>. 
         /// </param>
         /// <returns>The claims or null if <paramref name="info"/> is null.</returns>
-        ClaimsIdentity ToClaimsIdentity( IAuthenticationInfo info, bool userInfoOnly );
+        ClaimsIdentity ToClaimsIdentity( TAuthInfo info, bool userInfoOnly );
 
         /// <summary>
-        /// Exports a <see cref="IAuthenticationInfo"/> as a JObject.
+        /// Exports a <see cref="TAuthInfo"/> as a JObject.
         /// Must return null if <paramref name="info"/> is null or none.
         /// (See <see cref="AuthenticationExtensions.IsNullOrNone(IAuthenticationInfo)">IsNullOrNone</see> extension method).
         /// </summary>
         /// <param name="info">The authentication info.</param>
         /// <returns>The Json object or null if <paramref name="info"/> is null.</returns>
-        JObject ToJObject( IAuthenticationInfo info );
+        JObject ToJObject( TAuthInfo info );
 
         /// <summary>
         /// Writes the authentication information in binary format.
         /// </summary>
         /// <param name="w">The binary writer.</param>
         /// <param name="info">The authentication info to write. Can be null.</param>
-        void Write( BinaryWriter w, IAuthenticationInfo info );
+        void Write( BinaryWriter w, TAuthInfo info );
 
         /// <summary>
         /// Reads a authentication information in binary format.
@@ -89,8 +100,7 @@ namespace CK.Auth
         /// <exception cref="InvalidDataException">
         /// Whenever the binary data can not be read.
         /// </exception>
-        IAuthenticationInfo Read( BinaryReader r );
-
+        TAuthInfo Read( BinaryReader r );
 
     }
 }

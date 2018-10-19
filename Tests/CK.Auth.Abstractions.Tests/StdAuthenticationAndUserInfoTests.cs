@@ -11,8 +11,8 @@ namespace CK.Auth.Abstractions.Tests
     public class StdAuthenticationAndUserInfoTests
     {
         static readonly StdAuthenticationTypeSystem _typeSystem;
-        static readonly IUserInfo _albert;
-        static readonly IUserInfo _robert;
+        static readonly StdUserInfo _albert;
+        static readonly StdUserInfo _robert;
         static readonly DateTime _time0;
         static readonly DateTime _time1;
         static readonly DateTime _time2;
@@ -20,9 +20,9 @@ namespace CK.Auth.Abstractions.Tests
 
         static StdAuthenticationAndUserInfoTests()
         {
-            _typeSystem = new StdAuthenticationTypeSystem();
-            _albert = _typeSystem.UserInfo.Create(3712, "Albert", null);
-            _robert = _typeSystem.UserInfo.Create(12, "Robert", null);
+            _typeSystem = new StdAuthenticationTypeSystem( new StdUserInfoType() );
+            _albert = _typeSystem.UserInfoType.Create(3712, "Albert", null);
+            _robert = _typeSystem.UserInfoType.Create(12, "Robert", null);
             _time0 = new DateTime(2000, 1, 1, 14, 35, 59, DateTimeKind.Utc);
             _time1 = new DateTime(2001, 2, 2, 14, 35, 59, DateTimeKind.Utc);
             _time2 = new DateTime(2002, 3, 3, 14, 35, 59, DateTimeKind.Utc);
@@ -44,7 +44,7 @@ namespace CK.Auth.Abstractions.Tests
         {
             // Challenge Expires only.
             {
-                var a = new StdAuthenticationInfo(_typeSystem, _albert, null, _time2, null, _time0);
+                var a = new StdAuthenticationInfo(_typeSystem.UserInfoType, _albert, null, _time2, null, _time0);
                 a.Level.Should().Be(AuthLevel.Normal);
                 a.User.UserId.Should().Be(_albert.UserId);
                 a.CriticalExpires.Should().BeNull();
@@ -64,7 +64,7 @@ namespace CK.Auth.Abstractions.Tests
             }
             // Challenge CriticalExpires.
             {
-                var a = new StdAuthenticationInfo(_typeSystem, _albert, null, _time2, _time1, _time0);
+                var a = new StdAuthenticationInfo(_typeSystem.UserInfoType, _albert, null, _time2, _time1, _time0);
                 a.Level.Should().Be(AuthLevel.Critical);
 
                 var noChange = a.CheckExpiration(_time0);
@@ -83,10 +83,10 @@ namespace CK.Auth.Abstractions.Tests
         [Test]
         public void Unsafe_level_constructor_for_IAuthenticationInfo()
         {
-            var a = new StdAuthenticationInfo(_typeSystem, _albert);
+            var a = new StdAuthenticationInfo(_typeSystem.UserInfoType, _albert);
             a.Level.Should().Be(AuthLevel.Unsafe);
-            a.User.Should().BeSameAs(_typeSystem.UserInfo.Anonymous);
-            a.ActualUser.Should().BeSameAs(_typeSystem.UserInfo.Anonymous);
+            a.User.Should().BeSameAs(_typeSystem.UserInfoType.Anonymous);
+            a.ActualUser.Should().BeSameAs(_typeSystem.UserInfoType.Anonymous);
             a.UnsafeUser.Should().BeSameAs(_albert);
             a.UnsafeActualUser.Should().BeSameAs(_albert);
             a.IsImpersonated.Should().Be(false);
@@ -97,7 +97,7 @@ namespace CK.Auth.Abstractions.Tests
         {
             {
                 var time = DateTime.UtcNow.AddDays(1);
-                var a = new StdAuthenticationInfo(_typeSystem, _albert, time);
+                var a = new StdAuthenticationInfo(_typeSystem.UserInfoType, _albert, time);
                 a.Level.Should().Be(AuthLevel.Normal);
                 a.User.Should().BeSameAs(_albert);
                 a.ActualUser.Should().BeSameAs(_albert);
@@ -106,10 +106,10 @@ namespace CK.Auth.Abstractions.Tests
                 a.IsImpersonated.Should().Be(false);
             }
             {
-                var a = new StdAuthenticationInfo(_typeSystem, _albert, DateTime.UtcNow);
+                var a = new StdAuthenticationInfo(_typeSystem.UserInfoType, _albert, DateTime.UtcNow);
                 a.Level.Should().Be(AuthLevel.Unsafe);
-                a.User.Should().BeSameAs(_typeSystem.UserInfo.Anonymous);
-                a.ActualUser.Should().BeSameAs(_typeSystem.UserInfo.Anonymous);
+                a.User.Should().BeSameAs(_typeSystem.UserInfoType.Anonymous);
+                a.ActualUser.Should().BeSameAs(_typeSystem.UserInfoType.Anonymous);
                 a.UnsafeUser.Should().BeSameAs(_albert);
                 a.UnsafeActualUser.Should().BeSameAs(_albert);
                 a.IsImpersonated.Should().Be(false);
@@ -120,7 +120,7 @@ namespace CK.Auth.Abstractions.Tests
         public void Critical_level_constructor_for_IAuthenticationInfo()
         {
             {
-                var a = new StdAuthenticationInfo(_typeSystem, _albert, 
+                var a = new StdAuthenticationInfo(_typeSystem.UserInfoType, _albert, 
                                 DateTime.UtcNow.AddDays(1),
                                 DateTime.UtcNow.AddDays(2) );
                 a.Level.Should().Be(AuthLevel.Critical);
@@ -131,7 +131,7 @@ namespace CK.Auth.Abstractions.Tests
                 a.IsImpersonated.Should().Be(false);
             }
             {
-                var a = new StdAuthenticationInfo(_typeSystem, _albert,
+                var a = new StdAuthenticationInfo(_typeSystem.UserInfoType, _albert,
                                 DateTime.UtcNow.AddDays(1),
                                 DateTime.UtcNow.AddDays(-1));
                 a.Level.Should().Be(AuthLevel.Normal);
@@ -142,12 +142,12 @@ namespace CK.Auth.Abstractions.Tests
                 a.IsImpersonated.Should().Be(false);
             }
             {
-                var a = new StdAuthenticationInfo(_typeSystem, _albert,
+                var a = new StdAuthenticationInfo(_typeSystem.UserInfoType, _albert,
                                 DateTime.UtcNow,
                                 DateTime.UtcNow.AddDays(-1));
                 a.Level.Should().Be(AuthLevel.Unsafe);
-                a.User.Should().BeSameAs(_typeSystem.UserInfo.Anonymous);
-                a.ActualUser.Should().BeSameAs(_typeSystem.UserInfo.Anonymous);
+                a.User.Should().BeSameAs(_typeSystem.UserInfoType.Anonymous);
+                a.ActualUser.Should().BeSameAs(_typeSystem.UserInfoType.Anonymous);
                 a.UnsafeUser.Should().BeSameAs(_albert);
                 a.UnsafeActualUser.Should().BeSameAs(_albert);
                 a.IsImpersonated.Should().Be(false);
@@ -157,7 +157,7 @@ namespace CK.Auth.Abstractions.Tests
         [Test]
         public void setting_a_valid_CriticalExpires_boosts_the_Expires()
         {
-            var a = new StdAuthenticationInfo(_typeSystem, _albert);
+            var a = new StdAuthenticationInfo(_typeSystem.UserInfoType, _albert);
             a.Level.Should().Be(AuthLevel.Unsafe);
             a = a.SetCriticalExpires(_time1, _time0);
             a.Level.Should().Be(AuthLevel.Critical);
@@ -173,7 +173,7 @@ namespace CK.Auth.Abstractions.Tests
         [Test]
         public void setting_an_expired_CriticalExpires_does_not_change_the_Expires_iif_it_is_still_valid()
         {
-            var a = new StdAuthenticationInfo(_typeSystem, _albert);
+            var a = new StdAuthenticationInfo(_typeSystem.UserInfoType, _albert);
             a.Level.Should().Be(AuthLevel.Unsafe);
             a = a.SetExpires(_time3, _time2);
             a.Level.Should().Be(AuthLevel.Normal);
@@ -195,7 +195,7 @@ namespace CK.Auth.Abstractions.Tests
         public void setting_Expires_impacts_CriticalExpires()
         {
             // Albert's Critical expiration is time2 and its expiration is time3.
-            var a = new StdAuthenticationInfo(_typeSystem, _albert, null, _time3, _time2, _time0);
+            var a = new StdAuthenticationInfo(_typeSystem.UserInfoType, _albert, null, _time3, _time2, _time0);
             a.Level.Should().Be(AuthLevel.Critical);
             a.CriticalExpires.Should().Be(_time2);
 
@@ -225,7 +225,7 @@ namespace CK.Auth.Abstractions.Tests
         {
             // Albert is impersonated in Robert and its Critical expiration time is time1
             // and its expiration is time2.
-            var a = new StdAuthenticationInfo(_typeSystem, _albert, _robert, _time2, _time1, _time0);
+            var a = new StdAuthenticationInfo(_typeSystem.UserInfoType, _albert, _robert, _time2, _time1, _time0);
 
             var aClearedBefore = a.ClearImpersonation(_time0);
             aClearedBefore.IsImpersonated.Should().BeFalse();
@@ -245,7 +245,7 @@ namespace CK.Auth.Abstractions.Tests
         public void setting_impersonation_automatically_updates_the_expirations()
         {
             // Albert's Critical expiration is time1 and its expiration is time2.
-            var a = new StdAuthenticationInfo(_typeSystem, _albert, null, _time2, _time1, _time0);
+            var a = new StdAuthenticationInfo(_typeSystem.UserInfoType, _albert, null, _time2, _time1, _time0);
 
             var aSetBefore = a.Impersonate( _robert, _time0);
             aSetBefore.IsImpersonated.Should().BeTrue();
@@ -266,7 +266,7 @@ namespace CK.Auth.Abstractions.Tests
         public void impersonation_works_the_same_for_all_levels_except_none()
         {
             {
-                var a = new StdAuthenticationInfo(_typeSystem, _albert);
+                var a = new StdAuthenticationInfo(_typeSystem.UserInfoType, _albert);
                 a.Level.Should().Be(AuthLevel.Unsafe);
                 a.IsImpersonated.Should().Be(false);
 
@@ -281,7 +281,7 @@ namespace CK.Auth.Abstractions.Tests
                 back.UnsafeUser.Should().BeSameAs(_albert);
             }
             {
-                var a = new StdAuthenticationInfo(_typeSystem, _albert, DateTime.UtcNow.AddDays(1));
+                var a = new StdAuthenticationInfo(_typeSystem.UserInfoType, _albert, DateTime.UtcNow.AddDays(1));
                 a.Level.Should().Be(AuthLevel.Normal);
                 a.IsImpersonated.Should().Be(false);
 

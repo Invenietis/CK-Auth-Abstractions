@@ -1,57 +1,45 @@
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Security.Claims;
+using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
+using System;
+using System.IO;
 using System.Threading;
+using System.Linq;
+using Newtonsoft.Json;
 
 namespace CK.Auth
 {
     /// <summary>
-    /// Standard implementation of <see cref="IAuthenticationTypeSystem"/>.
-    /// This implementation is open to extension or can be reused (it also directly 
-    /// implements <see cref="IAuthenticationInfoType"/>.
+    /// Standard type handler implementation for <see cref="StdAuthenticationInfo"/> and <see cref="StdUserInfo"/>.
+    /// Defines "non instance" functionalities (that would have been non extensible static methods) like 
+    /// builders and converters of the <see cref="IAuthenticationInfo"/> type.
     /// </summary>
-    public class StdAuthenticationTypeSystem : IAuthenticationTypeSystem, IAuthenticationInfoType
+    public abstract class StdAuthenticationTypeSystemBase<TAuthInfo,TUserInfo,TFinalAuthInfo> : IAuthenticationTypeSystem<TFinalAuthInfo, TUserInfo>
+    where TAuthInfo : StdAuthenticationInfo<TUserInfo, TAuthInfo>
+    where TFinalAuthInfo : TAuthInfo
+    where TUserInfo : StdUserInfo
     {
-        readonly StdUserInfoType _userType;
-        Lazy<IAuthenticationInfo> _none;
         string _authenticationType = "CKA";
-        static readonly IUserSchemeInfo[] _emptySchemes = new IUserSchemeInfo[0];
 
         /// <summary>
-        /// Gets or sets the <see cref="ClaimsIdentity.AuthenticationType"/> used by <see cref="IAuthenticationInfoType.ToClaimsIdentity"/>
-        /// and enforced by <see cref="IAuthenticationInfoType.FromClaimsIdentity"/>.
+        /// Gets or sets the <see cref="ClaimsIdentity.AuthenticationType"/> used by <see cref="IAuthenticationTypeSystem.ToClaimsIdentity"/>
+        /// and enforced by <see cref="IAuthenticationTypeSystem.FromClaimsIdentity"/>.
         /// Defaults to "CKA".
         /// </summary>
         public string ClaimAuthenticationType { get => _authenticationType; protected set => _authenticationType = value; }
 
         /// <summary>
-        /// Gets the <see cref="ClaimsIdentity.AuthenticationType"/> used by <see cref="IAuthenticationInfoType.ToClaimsIdentity"/>
-        /// when exporting only the saf user claims and enforced by <see cref="IAuthenticationInfoType.FromClaimsIdentity"/>.
+        /// Gets the <see cref="ClaimsIdentity.AuthenticationType"/> used by <see cref="IAuthenticationTypeSystem.ToClaimsIdentity"/>
+        /// when exporting only the safe user claims and enforced by <see cref="IAuthenticationTypeSystem.FromClaimsIdentity"/>.
         /// Always equal to "<see cref="ClaimAuthenticationType"/>-S" (defaults to "CKA-S").
         /// </summary>
         public string ClaimAuthenticationTypeSimple => ClaimAuthenticationType + "-S";
 
         /// <summary>
-        /// The name of the <see cref="IUserInfo.UserName"/> for the <see cref="Claim.Type"/>
-        /// and JObject property name.
+        /// The name of the <see cref="IAuthenticationInfo.User"/> or <see cref="IAuthenticationInfo.UnsafeUser"/>
+        /// for the <see cref="Claim.Type"/> and JObject property name.
         /// </summary>
         public const string UserNameKeyType = "name";
-
-        /// <summary>
-        /// The name of the <see cref="IUserInfo.UserId"/> for the <see cref="Claim.Type"/>
-        /// and JObject property name.
-        /// </summary>
-        public const string UserIdKeyType = "id";
-
-        /// <summary>
-        /// The name of the <see cref="IUserInfo.Schemes"/> for the <see cref="Claim.Type"/>
-        /// and JObject property name.
-        /// </summary>
-        public const string SchemesKeyType = "schemes";
 
         /// <summary>
         /// The name of the <see cref="IAuthenticationInfo.Level"/> for the <see cref="Claim.Type"/>.
@@ -80,46 +68,47 @@ namespace CK.Auth
         /// </summary>
         public const string ActualUserKeyType = "actualUser";
 
-        /// <summary>
-        /// Initializes a new <see cref="StdAuthenticationTypeSystem"/>.
-        /// </summary>
-        public StdAuthenticationTypeSystem()
+        readonly StdUserInfoType<TUserInfo> _userType;
+        readonly Lazy<TFinalAuthInfo> _none;
+
+         protected StdAuthenticationTypeSystemBase( StdUserInfoType<TUserInfo> userInfoType )
         {
-            _userType = new StdUserInfoType();
-            _none = new Lazy<IAuthenticationInfo>( () => CreateAuthenticationInfo( _userType.Anonymous, null ), LazyThreadSafetyMode.PublicationOnly );
+            if( userInfoType == null ) throw new ArgumentNullException( nameof(userInfoType) );
+            _userType = userInfoType;
+            _none = new Lazy<TFinalAuthInfo>( () => CreateNone(), LazyThreadSafetyMode.PublicationOnly );
         }
 
-        IUserInfoType IAuthenticationTypeSystem.UserInfo => _userType;
+        IUserInfoType<TUserInfo> IAuthenticationTypeSystem<TFinalAuthInfo, TUserInfo>.UserInfoType => _userType;
 
         /// <summary>
-        /// Gets the <see cref="IUserInfoType"/> type manager.
+        /// Gets the associated user info type.
         /// </summary>
-        public StdUserInfoType UserInfo => _userType;
+        public StdUserInfoType<TUserInfo> UserInfoType => _userType;
 
         /// <summary>
-        /// Gets the <see cref="IAuthenticationInfoType"/> type manager (actually, this object implements it).
+        /// Gets the non authentication information: it has a <see cref="IAuthenticationInfo.Level"/> equals to
+        /// <see cref="AuthLevel.None"/> and is semantically the same as a null reference (all authentication
+        /// information with a None level are equivalent).
+        /// Use <see cref="AuthenticationExtensions.IsNullOrNone{TUserInfo}(IAuthenticationInfo{TUserInfo})">IsNullOrNone</see> to 
+        /// easily test both cases.
         /// </summary>
-        public IAuthenticationInfoType AuthenticationInfo => this;
+        public TFinalAuthInfo None => _none.Value;
 
-        #region IAuthenticationInfo
+        protected abstract TFinalAuthInfo CreateNone();
 
-        IAuthenticationInfo IAuthenticationInfoType.None => _none.Value;
-
-        IAuthenticationInfo IAuthenticationInfoType.Create( IUserInfo user, DateTime? expires, DateTime? criticalExpires ) => CreateAuthenticationInfo( user, expires, criticalExpires );
-
-        IAuthenticationInfo IAuthenticationInfoType.FromClaimsIdentity( ClaimsIdentity id )
+        public TFinalAuthInfo FromClaimsIdentity( ClaimsIdentity id )
         {
             if( id == null
                 || (id.AuthenticationType != ClaimAuthenticationType && id.AuthenticationType != ClaimAuthenticationTypeSimple) )
             {
                 return null;
             }
-            IUserInfo actualUser = null;
-            IUserInfo user = UserInfo.FromClaims( id.Claims );
+            TUserInfo actualUser = null;
+            TUserInfo user = _userType.FromClaims( id.Claims );
             IEnumerable<Claim> actualActorClaims = id.Claims;
             if( id.Actor != null )
             {
-                actualUser = UserInfo.FromClaims( id.Actor.Claims );
+                actualUser = _userType.FromClaims( id.Actor.Claims );
                 actualActorClaims = id.Actor.Claims;
             }
             string exp = actualActorClaims.FirstOrDefault( c => c.Type == ExpirationKeyType )?.Value;
@@ -129,33 +118,43 @@ namespace CK.Auth
             return AuthenticationInfoFromClaimsIdentity( actualUser, user, expires, criticalExpires, id, actualActorClaims );
         }
 
-        IAuthenticationInfo IAuthenticationInfoType.FromJObject( JObject o ) => AuthenticationInfoFromJObject( o );
-
-        ClaimsIdentity IAuthenticationInfoType.ToClaimsIdentity( IAuthenticationInfo info, bool userInfoOnly ) => AuthenticationInfoToClaimsIdentity( info, userInfoOnly );
-
-        JObject IAuthenticationInfoType.ToJObject( IAuthenticationInfo info ) => AuthenticationInfoToJObject( info );
-
-        void IAuthenticationInfoType.Write( BinaryWriter w, IAuthenticationInfo info )
+        /// <summary>
+        /// Writes the authentication information in binary format.
+        /// Parameter <paramref name="info"/> must be a <typeparamref name="TAuthInfo"/>
+        /// otherwise an <see cref="ArgumentException"/> is thrown.
+        /// </summary>
+        /// <param name="w">The binary writer (must not be null).</param>
+        /// <param name="info">The user info to write that must be a <typeparamref name="TAuthInfo"/>. Can be null.</param>
+        public virtual void Write( BinaryWriter w, TFinalAuthInfo info )
         {
             if( w == null ) throw new ArgumentNullException( nameof( w ) );
             if( info.IsNullOrNone() ) w.Write( 0 );
             else
             {
+                if( !(info is TAuthInfo tInfo) ) throw new ArgumentException( $"Must be a '{typeof( TAuthInfo ).FullName}'.", nameof( info ) );
                 w.Write( 1 );
                 int flag = 0;
                 if( info.IsImpersonated ) flag |= 1;
                 if( info.Expires.HasValue ) flag |= 2;
                 if( info.CriticalExpires.HasValue ) flag |= 4;
                 w.Write( (byte)flag );
-                ((IUserInfoType)UserInfo).Write( w, info.UnsafeUser );
-                if( info.IsImpersonated ) ((IUserInfoType)UserInfo).Write( w, info.UnsafeActualUser );
+                _userType.Write( w, info.UnsafeUser );
+                if( info.IsImpersonated ) _userType.Write( w, info.UnsafeActualUser );
                 if( info.Expires.HasValue ) w.Write( info.Expires.Value.ToBinary() );
                 if( info.CriticalExpires.HasValue ) w.Write( info.CriticalExpires.Value.ToBinary() );
                 WriteAuthenticationInfoRemainder( w, info );
             }
         }
 
-        IAuthenticationInfo IAuthenticationInfoType.Read( BinaryReader r )
+        /// <summary>
+        /// Creates a <typeparamref name="TAuthInfo"/> from a binary reader.
+        /// This default implementation reads the basic <see cref="IAuthenticationInfo"/> data
+        /// and then calls the extension point <see cref="ReadAuthenticationInfoRemainder"/> to
+        /// handle any extra fields and create the actual authentication info object.
+        /// </summary>
+        /// <param name="w">The binary writer (must not be null).</param>
+        /// <param name="info">The user info to write. Can be null.</param>
+        public TFinalAuthInfo Read( BinaryReader r )
         {
             if( r == null ) throw new ArgumentNullException( nameof( r ) );
             try
@@ -163,11 +162,11 @@ namespace CK.Auth
                 int version = r.ReadInt32();
                 if( version == 0 ) return null;
                 int flags = r.ReadByte();
-                IUserInfo user = ((IUserInfoType)UserInfo).Read( r );
-                IUserInfo actualUser = null;
+                var user = _userType.Read( r );
+                TUserInfo actualUser = null;
                 DateTime? expires = null;
                 DateTime? criticalExpires = null;
-                if( (flags & 1) != 0 ) actualUser = ((IUserInfoType)UserInfo).Read( r );
+                if( (flags & 1) != 0 ) actualUser = _userType.Read( r );
                 if( (flags & 2) != 0 ) expires = DateTime.FromBinary( r.ReadInt64() );
                 if( (flags & 4) != 0 ) criticalExpires = DateTime.FromBinary( r.ReadInt64() );
                 return ReadAuthenticationInfoRemainder( r, actualUser, user, expires, criticalExpires );
@@ -179,39 +178,35 @@ namespace CK.Auth
         }
 
         /// <summary>
-        /// Implements <see cref="IAuthenticationInfoType.Create"/>.
-        /// </summary>
-        /// <param name="user">The unsafe user information. Can be null (the <see cref="IAuthenticationInfoType.None"/> must be returned).</param>
-        /// <param name="expires">When null or already expired, Level is <see cref="AuthLevel.Unsafe"/>.</param>
-        /// <param name="criticalExpires">Optional critical expiration.</param>
-        /// <returns>The unsafe authentication information.</returns>
-        protected virtual IAuthenticationInfo CreateAuthenticationInfo( IUserInfo user, DateTime? expires, DateTime? criticalExpires = null )
-        {
-            return user == null ? _none.Value : new StdAuthenticationInfo( this, user, expires, criticalExpires );
-        }
-
-        /// <summary>
-        /// Implements <see cref="IAuthenticationInfoType.ToJObject(IAuthenticationInfo)"/>.
+        /// Implements <see cref="IAuthenticationTypeSystem.ToJObject(IAuthenticationInfo)"/>.
         /// </summary>
         /// <param name="info">The authentication information.</param>
         /// <returns>Authentication information as a JObject.</returns>
-        protected virtual JObject AuthenticationInfoToJObject( IAuthenticationInfo info )
+        public virtual JObject ToJObject( TFinalAuthInfo info )
         {
             if( info.IsNullOrNone() ) return null;
             var o = new JObject();
-            o.Add( new JProperty( UserKeyType, UserInfo.ToJObject( info.UnsafeUser ) ) );
-            if( info.IsImpersonated ) o.Add( new JProperty( ActualUserKeyType, UserInfo.ToJObject( info.UnsafeActualUser ) ) );
+            o.Add( new JProperty( UserKeyType, _userType.ToJObject( info.UnsafeUser ) ) );
+            if( info.IsImpersonated ) o.Add( new JProperty( ActualUserKeyType, _userType.ToJObject( info.UnsafeActualUser ) ) );
             if( info.Expires.HasValue ) o.Add( new JProperty( ExpirationKeyType, info.Expires ) );
             if( info.CriticalExpires.HasValue ) o.Add( new JProperty( CriticalExpirationKeyType, info.CriticalExpires ) );
             return o;
         }
 
         /// <summary>
-        /// Implements <see cref="IAuthenticationInfoType.FromJObject(JObject)"/>.
+        /// Creates a <typeparamref name="TAuthInfo"/> from a JObject (or null if <paramref name="o"/> is null).
+        /// This default implementation handles error (by always throwing a <see cref="InvalidDataException"/>)
+        /// and extracts standard fields named <see cref="UserKeyType"/>, <see cref="ActualUserKeyType"/>,
+        /// <see cref="ExpirationKeyType"/> and <see cref="CriticalExpirationKeyType"/>, and then calls
+        /// the extension point <see cref="AuthenticationInfoFromJObject"/> to handle any extra
+        /// fields and create the actual authentication info object.
         /// </summary>
-        /// <param name="o">The JObject.</param>
-        /// <returns>The authentication information.</returns>
-        protected virtual IAuthenticationInfo AuthenticationInfoFromJObject( JObject o )
+        /// <param name="o">The JSON object.</param>
+        /// <returns>The extracted authentication info or null if <paramref name="o"/> is null.</returns>
+        /// <exception cref="InvalidDataException">
+        /// Whenever the object is not in the expected format.
+        /// </exception>
+        public virtual TFinalAuthInfo FromJObject( JObject o )
         {
             if( o == null ) return null;
             try
@@ -220,7 +215,7 @@ namespace CK.Auth
                 var actualUser = _userType.FromJObject( (JObject)o[ActualUserKeyType] );
                 var expires = (DateTime?)o[ExpirationKeyType];
                 var criticalExpires = (DateTime?)o[CriticalExpirationKeyType];
-                return new StdAuthenticationInfo( this, actualUser, user, expires, criticalExpires );
+                return AuthenticationInfoFromJObject( actualUser, user, expires, criticalExpires, o );
             }
             catch( Exception ex )
             {
@@ -229,9 +224,27 @@ namespace CK.Auth
         }
 
         /// <summary>
-        /// Implements <see cref="IAuthenticationInfoType.ToClaimsIdentity"/>.
+        /// Implements the ultimate step of <see cref="FromJObject(JObject)"/>.
+        /// Must throw <see cref="InvalidDataException"/> if the parameter o is not valid.
+        /// </summary>
+        /// <param name="actualUser">The actual user already read.</param>
+        /// <param name="user">The user already read.</param>
+        /// <param name="expires">The expiration already read.</param>
+        /// <param name="criticalExpires">The critical expiration already read.</param>
+        /// <param name="o">The JObject that may be used to extract any extra field.</param>
+        /// <returns>The authentication information.</returns>
+        protected abstract TFinalAuthInfo AuthenticationInfoFromJObject(
+            TUserInfo actualUser,
+            TUserInfo user,
+            DateTime? expires,
+            DateTime? criticalExpires,
+            JObject o );
+
+        /// <summary>
+        /// Implements <see cref="IAuthenticationTypeSystem.ToClaimsIdentity"/>.
         /// It uses <see cref="ClaimAuthenticationType"/> as the <see cref="ClaimsIdentity.AuthenticationType"/>
         /// and the <see cref="ClaimsIdentity.Actor"/> for impersonation.
+        /// <paramref name="info"/> must be a <typeparamref name="T"/> otherwise an <see cref="ArgumentException"/> is thrown.
         /// </summary>
         /// <param name="info">The authentication information.</param>
         /// <param name="userInfoOnly">
@@ -240,18 +253,19 @@ namespace CK.Auth
         /// the expirations if they exist and handle impersonation thanks to the <see cref="ClaimsIdentity.Actor"/>. 
         /// </param>
         /// <returns>Authentication information as a claim identity.</returns>
-        protected virtual ClaimsIdentity AuthenticationInfoToClaimsIdentity( IAuthenticationInfo info, bool userInfoOnly )
+        public virtual ClaimsIdentity ToClaimsIdentity( TFinalAuthInfo info, bool userInfoOnly )
         {
             if( info.IsNullOrNone() ) return null;
+            if( !(info is TAuthInfo tInfo) ) throw new ArgumentException( $"Must be a '{typeof( TAuthInfo ).FullName}'.", nameof( info ) );
             ClaimsIdentity id = userInfoOnly
-                                    ? new ClaimsIdentity( UserInfo.ToClaims( info.User ), ClaimAuthenticationTypeSimple, UserNameKeyType, null )
-                                    : new ClaimsIdentity( UserInfo.ToClaims( info.UnsafeUser ), ClaimAuthenticationType, UserNameKeyType, null );
+                                    ? new ClaimsIdentity( _userType.ToClaims( info.User ), ClaimAuthenticationTypeSimple, UserNameKeyType, null )
+                                    : new ClaimsIdentity( _userType.ToClaims( info.UnsafeUser ), ClaimAuthenticationType, UserNameKeyType, null );
             ClaimsIdentity propertyBearer = id;
             if( !userInfoOnly )
             {
                 if( info.IsImpersonated )
                 {
-                    id.Actor = propertyBearer = new ClaimsIdentity( UserInfo.ToClaims( info.UnsafeActualUser ), ClaimAuthenticationType, UserNameKeyType, null );
+                    id.Actor = propertyBearer = new ClaimsIdentity( _userType.ToClaims( info.UnsafeActualUser ), ClaimAuthenticationType, UserNameKeyType, null );
                 }
                 propertyBearer.AddClaim( new Claim( AuthLevelKeyType, info.Level.ToString() ) );
             }
@@ -261,7 +275,7 @@ namespace CK.Auth
         }
 
         /// <summary>
-        /// Implements <see cref="IAuthenticationInfoType.FromClaimsIdentity(ClaimsIdentity)"/>.
+        /// Implements <see cref="IAuthenticationTypeSystem.FromClaimsIdentity(ClaimsIdentity)"/>.
         /// Note that <see cref="AuthLevelKeyType"/> claim is ignored: the final level depends
         /// on <see cref="ExpirationKeyType"/> and <see cref="CriticalExpirationKeyType"/>.
         /// </summary>
@@ -278,29 +292,24 @@ namespace CK.Auth
         /// otherwise it is the <paramref name="id"/>'s Claims.
         /// </param>
         /// <returns>The authentication information.</returns>
-        protected virtual IAuthenticationInfo AuthenticationInfoFromClaimsIdentity(
-            IUserInfo actualUser,
-            IUserInfo user,
+        protected abstract TFinalAuthInfo AuthenticationInfoFromClaimsIdentity(
+            TUserInfo actualUser,
+            TUserInfo user,
             DateTime? expires,
             DateTime? criticalExpires,
             ClaimsIdentity id,
-            IEnumerable<Claim> actualActorClaims )
-        {
-            return new StdAuthenticationInfo( this, actualUser, user, expires, criticalExpires );
-        }
+            IEnumerable<Claim> actualActorClaims );
 
         /// <summary>
-        /// Implements <see cref="IAuthenticationInfoType.Write(BinaryWriter, IAuthenticationInfo)"/>.
+        /// Implements <see cref="IAuthenticationTypeSystem.Write(BinaryWriter, IAuthenticationInfo)"/>.
         /// Only extra properties to <see cref="IAuthenticationInfo"/> must be written.
         /// </summary>
         /// <param name="w">The binary writer.</param>
         /// <param name="info">The authentication info to write. Can be null.</param>
-        protected virtual void WriteAuthenticationInfoRemainder( BinaryWriter w, IAuthenticationInfo info )
-        {
-        }
+        protected abstract void WriteAuthenticationInfoRemainder( BinaryWriter w, TAuthInfo info );
 
         /// <summary>
-        /// Implements <see cref="IAuthenticationInfoType.Read(BinaryReader)"/>.
+        /// Implements last step of <see cref="Read(BinaryReader)"/>.
         /// Basic fields of <see cref="IAuthenticationInfo"/> are already read.
         /// </summary>
         /// <param name="r">The binary reader.</param>
@@ -309,12 +318,8 @@ namespace CK.Auth
         /// <param name="expires">Already read expires.</param>
         /// <param name="criticalExpires">Already read critical expires.</param>
         /// <returns>The authentication info.</returns>
-        private IAuthenticationInfo ReadAuthenticationInfoRemainder( BinaryReader r, IUserInfo actualUser, IUserInfo user, DateTime? expires, DateTime? criticalExpires )
-        {
-            return new StdAuthenticationInfo( this, actualUser, user, expires, criticalExpires );
-        }
+        protected abstract TFinalAuthInfo ReadAuthenticationInfoRemainder( BinaryReader r, TUserInfo actualUser, TUserInfo user, DateTime? expires, DateTime? criticalExpires );
 
-        #endregion
 
     }
 }

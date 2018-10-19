@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace CK.Auth
@@ -8,8 +8,6 @@ namespace CK.Auth
     /// </summary>
     public class StdUserInfo : IUserInfo
     {
-        static readonly IUserSchemeInfo[] _emptySchemes = new IUserSchemeInfo[0];
-
         /// <summary>
         /// Initializes a new <see cref="StdUserInfo"/>.
         /// </summary>
@@ -21,10 +19,21 @@ namespace CK.Auth
             UserId = userId;
             UserName = userName ?? string.Empty;
             if( (UserName.Length == 0) != (userId == 0) ) throw new ArgumentException( $"{userName} is empty if and only {userId} is 0." );
-            Schemes = schemes ?? _emptySchemes;
+            Schemes = schemes ?? Array.Empty<IUserSchemeInfo>();
         }
 
         /// <summary>
+        /// Initializes a new <see cref="StdUserInfo"/>.
+        /// </summary>
+        /// <param name="userId">The user identifier.</param>
+        /// <param name="userName">The user name. Can be null or empty if and only if <paramref name="userId"/> is 0.</param>
+        /// <param name="schemes">The schemes.</param>
+        public StdUserInfo( int userId, string userName, params IUserSchemeInfo[] schemes )
+            : this( userId, userName, (IReadOnlyList<IUserSchemeInfo>)schemes )
+        {
+        }
+
+       /// <summary>
         /// See <see cref="IUserInfo.UserId"/>.
         /// </summary>
         public int UserId { get; }

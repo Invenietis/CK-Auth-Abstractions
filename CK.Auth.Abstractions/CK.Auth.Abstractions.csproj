@@ -6,10 +6,6 @@
     <TargetFrameworks>netstandard1.3;net461</TargetFrameworks>
     <Description>Defines IUserInfo, IAuthenticationInfo as well as default implementations like StdUserInfo, StdAuthenticationInfo and extensible StdAuthenticationTypeSystem.</Description>
   </PropertyGroup>
-  
-  <ItemGroup>
-    <Compile Remove="TypeSystem\StdAuthenticationInfoType.cs" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />

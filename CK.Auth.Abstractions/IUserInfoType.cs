@@ -6,15 +6,17 @@ using System.IO;
 namespace CK.Auth
 {
     /// <summary>
+    /// Type handler for <see cref="IUserInfo"/>.
     /// Defines "non instance" functionalities (that would have been non extensible static methods) like 
     /// builders and converters of the <see cref="IUserInfo"/> type.
     /// </summary>
-    public interface IUserInfoType
+    public interface IUserInfoType<TUserInfo> : StObjSupport.ISingletonAmbientService
+        where TUserInfo : IUserInfo
     {
         /// <summary>
         /// Gets the anonymous user info object.
         /// </summary>
-        IUserInfo Anonymous { get; }
+        TUserInfo Anonymous { get; }
 
         /// <summary>
         /// Exports a <see cref="IUserInfo"/> to a list of claims.
@@ -22,26 +24,26 @@ namespace CK.Auth
         /// </summary>
         /// <param name="info">The user info.</param>
         /// <returns>The claims or null if <paramref name="info"/> is null.</returns>
-        List<Claim> ToClaims( IUserInfo info );
+        List<Claim> ToClaims( TUserInfo info );
 
         /// <summary>
-        /// Exports a <see cref="IUserInfo"/> as a JObject.
+        /// Exports a <see cref="TUserInfo"/> as a JObject.
         /// Must return null if <paramref name="info"/> is null.
         /// </summary>
         /// <param name="info">The user info.</param>
         /// <returns>The Json object or null if <paramref name="info"/> is null.</returns>
-        JObject ToJObject( IUserInfo info );
+        JObject ToJObject( TUserInfo info );
 
         /// <summary>
-        /// Creates a <see cref="IUserInfo"/> from a ClaimsIdentity.
+        /// Creates a <see cref="TUserInfo"/> from a ClaimsIdentity.
         /// Must return null if <paramref name="id"/> is null.
         /// </summary>
         /// <param name="id">The claims.</param>
         /// <returns>The extracted user info or null if <paramref name="id"/> is null.</returns>
-        IUserInfo FromClaims( IEnumerable<Claim> id );
+        TUserInfo FromClaims( IEnumerable<Claim> id );
 
         /// <summary>
-        /// Creates a <see cref="IUserInfo"/> from a JObject.
+        /// Creates a <see cref="TUserInfo"/> from a JObject.
         /// Must return null if <paramref name="o"/> is null.
         /// Must throw <see cref="InvalidDataException"/> if the o is not valid.
         /// </summary>
@@ -50,14 +52,14 @@ namespace CK.Auth
         /// <exception cref="InvalidDataException">
         /// Whenever the object is not in the expected format.
         /// </exception>
-        IUserInfo FromJObject( JObject o );
+        TUserInfo FromJObject( JObject o );
 
         /// <summary>
         /// Writes the user information in binary format.
         /// </summary>
         /// <param name="w">The binary writer (must not be null).</param>
         /// <param name="info">The user info to write. Can be null.</param>
-        void Write( BinaryWriter w, IUserInfo info );
+        void Write( BinaryWriter w, TUserInfo info );
 
         /// <summary>
         /// Reads a user information in binary format.
@@ -68,6 +70,6 @@ namespace CK.Auth
         /// <exception cref="InvalidDataException">
         /// Whenever the binary data can not be read.
         /// </exception>
-        IUserInfo Read( BinaryReader r );
+        TUserInfo Read( BinaryReader r );
     }
 }
