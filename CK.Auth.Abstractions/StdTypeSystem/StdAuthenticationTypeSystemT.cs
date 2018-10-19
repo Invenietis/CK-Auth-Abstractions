@@ -9,8 +9,7 @@ using Newtonsoft.Json;
 
 namespace CK.Auth
 {
-    public abstract class StdAuthenticationTypeSystem<TAuthInfo, TUserInfo> : StdAuthenticationTypeSystemBase<TAuthInfo, TUserInfo, TAuthInfo>
-        where TAuthInfo : StdAuthenticationInfo<TUserInfo, TAuthInfo>
+    public abstract class StdAuthenticationTypeSystem<TUserInfo> : StdAuthenticationTypeSystem<StdAuthenticationInfo<TUserInfo>, TUserInfo>
         where TUserInfo : StdUserInfo
     {
 

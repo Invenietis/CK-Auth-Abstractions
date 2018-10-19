@@ -15,8 +15,8 @@ namespace CK.Auth
     /// </summary>
     public class StdAuthenticationTypeSystem : StdAuthenticationTypeSystem<StdAuthenticationInfo,StdUserInfo>
     {
-        public StdAuthenticationTypeSystem( StdUserInfoType userInfoType )
-            : base( userInfoType )
+        public StdAuthenticationTypeSystem()
+            : base( new StdUserInfoType() )
         {
         }
 

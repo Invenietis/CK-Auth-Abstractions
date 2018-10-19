@@ -88,6 +88,20 @@ namespace CK.Auth
         protected abstract TUserInfo UserInfoFromClaims(int userId, string userName, IUserSchemeInfo[] schemes, IEnumerable<Claim> claims);
 
         /// <summary>
+        /// Implements <see cref="IUserInfoType.ToJObject(IUserInfo)"/>.
+        /// </summary>
+        /// <param name="info">The user information.</param>
+        /// <returns>User information as a JObject.</returns>
+        public virtual JObject ToJObject( TUserInfo info )
+        {
+            if( info == null ) return null;
+            return new JObject(
+                    new JProperty( UserIdKeyType, info.UserId ),
+                    new JProperty( UserNameKeyType, info.UserName ),
+                    new JProperty( SchemesKeyType, ToSchemesJArray( info.Schemes ) ) );
+        }
+
+        /// <summary>
         /// Creates a <typeparamref name="TUserInfo"/> from a JObject (or null if <paramref name="o"/> is null).
         /// This default implementation handles error (by always throwing a <see cref="InvalidDataException"/>)
         /// and extracts standard fields named <see cref="UserIdKeyType"/>, <see cref="UserNameKeyType"/> and <see cref="SchemesKeyType"/>,
@@ -144,19 +158,6 @@ namespace CK.Auth
             return list;
         }
 
-        /// <summary>
-        /// Implements <see cref="IUserInfoType.ToJObject(IUserInfo)"/>.
-        /// </summary>
-        /// <param name="info">The user information.</param>
-        /// <returns>User information as a JObject.</returns>
-        public virtual JObject ToJObject( TUserInfo info )
-        {
-            if( info == null ) return null;
-            return new JObject(
-                    new JProperty( UserIdKeyType, info.UserId ),
-                    new JProperty( UserNameKeyType, info.UserName ),
-                    new JProperty( SchemesKeyType, ToSchemesJArray( info.Schemes ) ) );
-        }
 
         /// <summary>
         /// Writes the user information in binary format.

@@ -96,7 +96,24 @@ namespace CK.Auth
 
         protected abstract TFinalAuthInfo CreateNone();
 
-        public TFinalAuthInfo FromClaimsIdentity( ClaimsIdentity id )
+        /// <summary>
+        /// Reads a <see cref="ClaimsIdentity"/> that has been previously created by <see cref="ToClaimsIdentity(TFinalAuthInfo, bool)"/>.
+        /// <para>
+        /// This returns null if <paramref name="id"/> is null or the <see cref="ClaimsIdentity.AuthenticationType"/>
+        /// is not <see cref="ClaimAuthenticationType"/> or <see cref="ClaimAuthenticationTypeSimple"/>.
+        /// </para>
+        /// <para>
+        /// Note that <see cref="AuthLevelKeyType"/> claim is ignored: the final level depends
+        /// on <see cref="ExpirationKeyType"/> and <see cref="CriticalExpirationKeyType"/>.
+        /// </para>
+        /// <para>
+        /// This method should not be overridden, it is virtual for the sake of openness.
+        /// Extra data must be handled by <see cref="AuthenticationInfoFromClaimsIdentity"/>. 
+        /// </para>
+        /// </summary>
+        /// <param name="id">The claims identity.</param>
+        /// <returns>A new authentication object.</returns>
+        public virtual TFinalAuthInfo FromClaimsIdentity( ClaimsIdentity id )
         {
             if( id == null
                 || (id.AuthenticationType != ClaimAuthenticationType && id.AuthenticationType != ClaimAuthenticationTypeSimple) )
@@ -119,63 +136,28 @@ namespace CK.Auth
         }
 
         /// <summary>
-        /// Writes the authentication information in binary format.
-        /// Parameter <paramref name="info"/> must be a <typeparamref name="TAuthInfo"/>
-        /// otherwise an <see cref="ArgumentException"/> is thrown.
+        /// Implements ultimate step of <see cref="FromClaimsIdentity(ClaimsIdentity)"/>.
         /// </summary>
-        /// <param name="w">The binary writer (must not be null).</param>
-        /// <param name="info">The user info to write that must be a <typeparamref name="TAuthInfo"/>. Can be null.</param>
-        public virtual void Write( BinaryWriter w, TFinalAuthInfo info )
-        {
-            if( w == null ) throw new ArgumentNullException( nameof( w ) );
-            if( info.IsNullOrNone() ) w.Write( 0 );
-            else
-            {
-                if( !(info is TAuthInfo tInfo) ) throw new ArgumentException( $"Must be a '{typeof( TAuthInfo ).FullName}'.", nameof( info ) );
-                w.Write( 1 );
-                int flag = 0;
-                if( info.IsImpersonated ) flag |= 1;
-                if( info.Expires.HasValue ) flag |= 2;
-                if( info.CriticalExpires.HasValue ) flag |= 4;
-                w.Write( (byte)flag );
-                _userType.Write( w, info.UnsafeUser );
-                if( info.IsImpersonated ) _userType.Write( w, info.UnsafeActualUser );
-                if( info.Expires.HasValue ) w.Write( info.Expires.Value.ToBinary() );
-                if( info.CriticalExpires.HasValue ) w.Write( info.CriticalExpires.Value.ToBinary() );
-                WriteAuthenticationInfoRemainder( w, info );
-            }
-        }
-
-        /// <summary>
-        /// Creates a <typeparamref name="TAuthInfo"/> from a binary reader.
-        /// This default implementation reads the basic <see cref="IAuthenticationInfo"/> data
-        /// and then calls the extension point <see cref="ReadAuthenticationInfoRemainder"/> to
-        /// handle any extra fields and create the actual authentication info object.
-        /// </summary>
-        /// <param name="w">The binary writer (must not be null).</param>
-        /// <param name="info">The user info to write. Can be null.</param>
-        public TFinalAuthInfo Read( BinaryReader r )
-        {
-            if( r == null ) throw new ArgumentNullException( nameof( r ) );
-            try
-            {
-                int version = r.ReadInt32();
-                if( version == 0 ) return null;
-                int flags = r.ReadByte();
-                var user = _userType.Read( r );
-                TUserInfo actualUser = null;
-                DateTime? expires = null;
-                DateTime? criticalExpires = null;
-                if( (flags & 1) != 0 ) actualUser = _userType.Read( r );
-                if( (flags & 2) != 0 ) expires = DateTime.FromBinary( r.ReadInt64() );
-                if( (flags & 4) != 0 ) criticalExpires = DateTime.FromBinary( r.ReadInt64() );
-                return ReadAuthenticationInfoRemainder( r, actualUser, user, expires, criticalExpires );
-            }
-            catch( Exception ex )
-            {
-                throw new InvalidDataException( "Invalid binary format.", ex );
-            }
-        }
+        /// <param name="actualUser">The actual user (from <see cref="ClaimsIdentity.Actor"/>).</param>
+        /// <param name="user">The user information.</param>
+        /// <param name="expires">The expiration.</param>
+        /// <param name="criticalExpires">The critical expiration.</param>
+        /// <param name="id">
+        /// The claims identity (its AuthenticationType is either <see cref="ClaimAuthenticationType"/>
+        /// or <see cref="ClaimAuthenticationTypeSimple"/>).
+        /// </param>
+        /// <param name="actualActorClaims">
+        /// The <see cref="ClaimsIdentity.Actor"/> claims when impersonation is active,
+        /// otherwise it is the <paramref name="id"/>'s Claims.
+        /// </param>
+        /// <returns>The authentication information.</returns>
+        protected abstract TFinalAuthInfo AuthenticationInfoFromClaimsIdentity(
+            TUserInfo actualUser,
+            TUserInfo user,
+            DateTime? expires,
+            DateTime? criticalExpires,
+            ClaimsIdentity id,
+            IEnumerable<Claim> actualActorClaims );
 
         /// <summary>
         /// Implements <see cref="IAuthenticationTypeSystem.ToJObject(IAuthenticationInfo)"/>.
@@ -195,11 +177,16 @@ namespace CK.Auth
 
         /// <summary>
         /// Creates a <typeparamref name="TAuthInfo"/> from a JObject (or null if <paramref name="o"/> is null).
+        /// <para>
         /// This default implementation handles error (by always throwing a <see cref="InvalidDataException"/>)
         /// and extracts standard fields named <see cref="UserKeyType"/>, <see cref="ActualUserKeyType"/>,
         /// <see cref="ExpirationKeyType"/> and <see cref="CriticalExpirationKeyType"/>, and then calls
-        /// the extension point <see cref="AuthenticationInfoFromJObject"/> to handle any extra
-        /// fields and create the actual authentication info object.
+        /// the extension point <see cref="AuthenticationInfoFromJObject"/>.
+        /// </para>
+        /// <para>
+        /// This method should not be overridden, it is virtual for the sake of openness.
+        /// Extra data must be handled by <see cref="AuthenticationInfoFromJObject"/>. 
+        /// </para>
         /// </summary>
         /// <param name="o">The JSON object.</param>
         /// <returns>The extracted authentication info or null if <paramref name="o"/> is null.</returns>
@@ -244,7 +231,6 @@ namespace CK.Auth
         /// Implements <see cref="IAuthenticationTypeSystem.ToClaimsIdentity"/>.
         /// It uses <see cref="ClaimAuthenticationType"/> as the <see cref="ClaimsIdentity.AuthenticationType"/>
         /// and the <see cref="ClaimsIdentity.Actor"/> for impersonation.
-        /// <paramref name="info"/> must be a <typeparamref name="T"/> otherwise an <see cref="ArgumentException"/> is thrown.
         /// </summary>
         /// <param name="info">The authentication information.</param>
         /// <param name="userInfoOnly">
@@ -275,30 +261,34 @@ namespace CK.Auth
         }
 
         /// <summary>
-        /// Implements <see cref="IAuthenticationTypeSystem.FromClaimsIdentity(ClaimsIdentity)"/>.
-        /// Note that <see cref="AuthLevelKeyType"/> claim is ignored: the final level depends
-        /// on <see cref="ExpirationKeyType"/> and <see cref="CriticalExpirationKeyType"/>.
+        /// Writes the authentication information in binary format.
+        /// <para>
+        /// This method should not be overridden, it is virtual for the sake of openness.
+        /// Extra data must be handled by <see cref="WriteAuthenticationInfoRemainder"/>. 
+        /// </para>
         /// </summary>
-        /// <param name="actualUser">The actual user (from <see cref="ClaimsIdentity.Actor"/>).</param>
-        /// <param name="user">The user information.</param>
-        /// <param name="expires">The expiration.</param>
-        /// <param name="criticalExpires">The critical expiration.</param>
-        /// <param name="id">
-        /// The claims identity (its AuthenticationType is either <see cref="ClaimAuthenticationType"/>
-        /// or <see cref="ClaimAuthenticationTypeSimple"/>).
-        /// </param>
-        /// <param name="actualActorClaims">
-        /// The <see cref="ClaimsIdentity.Actor"/> claims when impersonation is active,
-        /// otherwise it is the <paramref name="id"/>'s Claims.
-        /// </param>
-        /// <returns>The authentication information.</returns>
-        protected abstract TFinalAuthInfo AuthenticationInfoFromClaimsIdentity(
-            TUserInfo actualUser,
-            TUserInfo user,
-            DateTime? expires,
-            DateTime? criticalExpires,
-            ClaimsIdentity id,
-            IEnumerable<Claim> actualActorClaims );
+        /// <param name="w">The binary writer (must not be null).</param>
+        /// <param name="info">The user info to write. Can be null.</param>
+        public virtual void Write( BinaryWriter w, TFinalAuthInfo info )
+        {
+            if( w == null ) throw new ArgumentNullException( nameof( w ) );
+            if( info.IsNullOrNone() ) w.Write( 0 );
+            else
+            {
+                if( !(info is TAuthInfo tInfo) ) throw new ArgumentException( $"Must be a '{typeof( TAuthInfo ).FullName}'.", nameof( info ) );
+                w.Write( 1 );
+                int flag = 0;
+                if( info.IsImpersonated ) flag |= 1;
+                if( info.Expires.HasValue ) flag |= 2;
+                if( info.CriticalExpires.HasValue ) flag |= 4;
+                w.Write( (byte)flag );
+                _userType.Write( w, info.UnsafeUser );
+                if( info.IsImpersonated ) _userType.Write( w, info.UnsafeActualUser );
+                if( info.Expires.HasValue ) w.Write( info.Expires.Value.ToBinary() );
+                if( info.CriticalExpires.HasValue ) w.Write( info.CriticalExpires.Value.ToBinary() );
+                WriteAuthenticationInfoRemainder( w, info );
+            }
+        }
 
         /// <summary>
         /// Implements <see cref="IAuthenticationTypeSystem.Write(BinaryWriter, IAuthenticationInfo)"/>.
@@ -307,6 +297,39 @@ namespace CK.Auth
         /// <param name="w">The binary writer.</param>
         /// <param name="info">The authentication info to write. Can be null.</param>
         protected abstract void WriteAuthenticationInfoRemainder( BinaryWriter w, TAuthInfo info );
+
+        /// <summary>
+        /// Creates a <typeparamref name="TAuthInfo"/> from a binary reader.
+        /// This default implementation reads the basic <see cref="IAuthenticationInfo"/> data
+        /// and then calls the extension point <see cref="ReadAuthenticationInfoRemainder"/>.
+        /// <para>
+        /// This method should not be overridden, it is virtual for the sake of openness.
+        /// </para>
+        /// </summary>
+        /// <param name="r">The binary reader (must not be null).</param>
+        /// <returns>A new authentication object.</returns>
+        public virtual TFinalAuthInfo Read( BinaryReader r )
+        {
+            if( r == null ) throw new ArgumentNullException( nameof( r ) );
+            try
+            {
+                int version = r.ReadInt32();
+                if( version == 0 ) return null;
+                int flags = r.ReadByte();
+                var user = _userType.Read( r );
+                TUserInfo actualUser = null;
+                DateTime? expires = null;
+                DateTime? criticalExpires = null;
+                if( (flags & 1) != 0 ) actualUser = _userType.Read( r );
+                if( (flags & 2) != 0 ) expires = DateTime.FromBinary( r.ReadInt64() );
+                if( (flags & 4) != 0 ) criticalExpires = DateTime.FromBinary( r.ReadInt64() );
+                return ReadAuthenticationInfoRemainder( r, actualUser, user, expires, criticalExpires );
+            }
+            catch( Exception ex )
+            {
+                throw new InvalidDataException( "Invalid binary format.", ex );
+            }
+        }
 
         /// <summary>
         /// Implements last step of <see cref="Read(BinaryReader)"/>.

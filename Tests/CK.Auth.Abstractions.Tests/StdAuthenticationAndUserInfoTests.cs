@@ -20,7 +20,7 @@ namespace CK.Auth.Abstractions.Tests
 
         static StdAuthenticationAndUserInfoTests()
         {
-            _typeSystem = new StdAuthenticationTypeSystem( new StdUserInfoType() );
+            _typeSystem = new StdAuthenticationTypeSystem();
             _albert = _typeSystem.UserInfoType.Create(3712, "Albert", null);
             _robert = _typeSystem.UserInfoType.Create(12, "Robert", null);
             _time0 = new DateTime(2000, 1, 1, 14, 35, 59, DateTimeKind.Utc);

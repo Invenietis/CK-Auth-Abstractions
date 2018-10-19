@@ -5,10 +5,11 @@ namespace CK.Auth
 {
 
     /// <summary>
-    /// Standard immutable implementation of <see cref="IAuthenticationInfo{StdUserInfo}"/>.
-    /// This may be specialized (<see cref="Clone"/> must be overridden).
+    /// Concrete immutable implementation of <see cref="IAuthenticationInfo{StdUserInfo}"/>.
+    /// This class is sealed. Specialized authentication info type must be created by
+    /// specializing <see cref="StdAuthenticationInfo{TUserInfo, TThis}"/>.
     /// </summary>
-    public class StdAuthenticationInfo : StdAuthenticationInfo<StdUserInfo, StdAuthenticationInfo>
+    public sealed class StdAuthenticationInfo : StdAuthenticationInfo<StdUserInfo, StdAuthenticationInfo>
     {
         /// <summary>
         /// Initializes a new <see cref="StdAuthenticationInfo"/>.
@@ -18,7 +19,7 @@ namespace CK.Auth
         /// <param name="expires">Expiration of authentication.</param>
         /// <param name="criticalExpires">Expiration of critical authentication.</param>
         public StdAuthenticationInfo(
-            IUserInfoType<StdUserInfo> userInfoType,
+            StdUserInfoType<StdUserInfo> userInfoType,
             StdUserInfo user,
             DateTime? expires = null,
             DateTime? criticalExpires = null )
@@ -35,7 +36,7 @@ namespace CK.Auth
         /// <param name="expires">Expiration must occur after <see cref="DateTime.UtcNow"/> otherwise <see cref="Level"/> is <see cref="AuthLevel.Unsafe"/>.</param>
         /// <param name="criticalExpires">Expiration must occur after DateTime.UtcNow in order for <see cref="Level"/> to be <see cref="AuthLevel.Critical"/>.</param>
         public StdAuthenticationInfo(
-            IUserInfoType<StdUserInfo> userInfoType,
+            StdUserInfoType<StdUserInfo> userInfoType,
             StdUserInfo actualUser,
             StdUserInfo user,
             DateTime? expires,
@@ -57,7 +58,7 @@ namespace CK.Auth
         /// <param name="criticalExpires">Expiration must occur after <paramref name="utcNow"/> in order for <see cref="Level"/> to be <see cref="AuthLevel.Critical"/>.</param>
         /// <param name="utcNow">The "current" date and time.</param>
         public StdAuthenticationInfo(
-            IUserInfoType<StdUserInfo> userInfoType,
+            StdUserInfoType<StdUserInfo> userInfoType,
             StdUserInfo actualUser,
             StdUserInfo user,
             DateTime? expires,

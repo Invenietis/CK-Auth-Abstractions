@@ -5,6 +5,8 @@ namespace CK.Auth
 {
     /// <summary>
     /// Standard immutable implementation of <see cref="IUserInfo"/>.
+    /// This can be specialized to hold mode information if needed: a corresponding
+    /// type handler (see <see cref="StdUserInfoType{TUserInfo}"/> must be implemented).
     /// </summary>
     public class StdUserInfo : IUserInfo
     {

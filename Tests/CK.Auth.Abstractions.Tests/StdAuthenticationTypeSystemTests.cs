@@ -12,7 +12,7 @@ namespace CK.Auth.Abstractions.Tests
     [TestFixture]
     public class StdAuthenticationTypeSystemTests
     {
-        StdAuthenticationTypeSystem _typeSystem = new StdAuthenticationTypeSystem( new StdUserInfoType() );
+        StdAuthenticationTypeSystem _typeSystem = new StdAuthenticationTypeSystem();
 
         [Test]
         public void Anonymous_exists_as_0_with_empty_DisplayName_and_Providers()
@@ -104,6 +104,8 @@ namespace CK.Auth.Abstractions.Tests
             var o4 = _typeSystem.Read( new BinaryReader( m ) );
             if( o.IsNullOrNone() ) o4.Should().BeNull();
             else o4.Should().BeEquivalentTo( o );
+            // Generic check.
+            CheckIdempotence( _typeSystem, o );
         }
 
         [Test]
@@ -128,5 +130,38 @@ namespace CK.Auth.Abstractions.Tests
             anonymous.UserName.Should().BeEmpty();
             anonymous.Schemes.Should().BeEmpty();
         }
+
+
+        public static void CheckIdempotence<TAuthInfo, TUserInfo>( StdAuthenticationTypeSystem<TAuthInfo, TUserInfo> typeSystem, TAuthInfo info )
+            where TAuthInfo : StdAuthenticationInfo<TUserInfo, TAuthInfo>
+            where TUserInfo : StdUserInfo
+        {
+            ClaimsIdentity id = typeSystem.ToClaimsIdentity( info, false );
+            TAuthInfo fromId = typeSystem.FromClaimsIdentity( id );
+            // For claims, seconds are used for expiration.
+            if( info.IsNullOrNone() ) fromId.IsNullOrNone().Should().BeTrue();
+            else fromId.Should().BeEquivalentTo( info, options => options
+                         .Using<DateTime>( ctx => ctx.Subject.Should().BeCloseTo( ctx.Expectation, 1000 ) )
+                         .WhenTypeIs<DateTime>() );
+
+            JObject jO = typeSystem.ToJObject( info );
+            TAuthInfo fromJ = typeSystem.FromJObject( jO );
+            if( info.IsNullOrNone() ) fromJ.IsNullOrNone().Should().BeTrue();
+            else fromJ.Should().BeEquivalentTo( info );
+
+            using( var m = new MemoryStream() )
+            using( var w = new BinaryWriter( m ) )
+            {
+                typeSystem.Write( w, info );
+                m.Position = 0;
+                using( var r = new BinaryReader( m ) )
+                {
+                    TAuthInfo back = typeSystem.Read( r );
+                    if( info.IsNullOrNone() ) back.IsNullOrNone().Should().BeTrue();
+                    else back.Should().BeEquivalentTo( info );
+                }
+            }
+        }
+
     }
 }

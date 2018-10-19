@@ -12,6 +12,12 @@
     <None Remove="SpecializedAuth\**" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="SpecializedAuth\TenantAuthenticationInfoT.cs" />
+    <Compile Include="SpecializedAuth\TenantAuthenticationTypeSystemT.cs" />
+    <Compile Include="SpecializedAuth\XLCIDUserInfo.cs" />
+    <Compile Include="SpecializedAuth\XLCIDUserInfoType.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="FluentAssertions" Version="5.4.1" />
     <ProjectReference Include="..\..\CK.Auth.Abstractions\CK.Auth.Abstractions.csproj" />
   </ItemGroup>
