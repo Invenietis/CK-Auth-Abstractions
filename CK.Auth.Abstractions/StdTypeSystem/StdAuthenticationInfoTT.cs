@@ -167,8 +167,6 @@ namespace CK.Auth
 
         IAuthenticationInfo IAuthenticationInfo.SetCriticalExpires( DateTime? criticalExpires, DateTime utcNow ) => SetCriticalExpires( criticalExpires, utcNow );
 
-        IAuthenticationInfo<TUserInfo> IAuthenticationInfo<TUserInfo>.Impersonate( TUserInfo user, DateTime utcNow ) => Impersonate( user, utcNow );
-
         /// <summary>
         /// Removes impersonation if any (the <see cref="ActualUser"/> becomes the <see cref="User"/>)
         /// and also <see cref="CheckExpiration()"/>.

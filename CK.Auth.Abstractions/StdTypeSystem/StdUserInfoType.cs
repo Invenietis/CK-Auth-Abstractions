@@ -7,7 +7,7 @@ using Newtonsoft.Json.Linq;
 namespace CK.Auth
 {
     /// <summary>
-    /// Implementation of <see cref="IUserInfoType"/> that handles <see cref="StdUserInfo"/>.
+    /// Implementation of <see cref="StdUserInfoType{TUserInfo}"/> that handles <see cref="StdUserInfo"/>.
     /// </summary>
     public sealed class StdUserInfoType : StdUserInfoType<StdUserInfo>
     {

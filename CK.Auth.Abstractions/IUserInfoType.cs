@@ -10,7 +10,7 @@ namespace CK.Auth
     /// Defines "non instance" functionalities (that would have been non extensible static methods) like 
     /// builders and converters of the <see cref="IUserInfo"/> type.
     /// </summary>
-    public interface IUserInfoType<TUserInfo>
+    public interface IUserInfoType<TUserInfo> : StObjSupport.ISingletonAmbientService
         where TUserInfo : IUserInfo
     {
         /// <summary>

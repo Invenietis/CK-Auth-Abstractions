@@ -54,17 +54,5 @@ namespace CK.Auth
         /// <returns>This or a new authentication info object.</returns>
         public static IAuthenticationInfo ClearImpersonation( this IAuthenticationInfo @this ) => @this.ClearImpersonation( DateTime.UtcNow );
 
-        /// <summary>
-        /// Impersonates this <see cref="IAuthenticationInfo.ActualUser"/>: the <see cref="IAuthenticationInfo.User"/> will 
-        /// be the new one.
-        /// Calling this if ActualUser is the anonymous MUST throw an <see cref="InvalidOperationException"/>.
-        /// </summary>
-        /// <param name="this">This authentication info.</param>
-        /// <param name="user">The new impersonated user.</param>
-        /// <returns>This or a new new authentication info object.</returns>
-        public static IAuthenticationInfo<TUserInfo> Impersonate<TUserInfo>( this IAuthenticationInfo<TUserInfo> @this, TUserInfo user )
-                            where TUserInfo : IUserInfo
-                            => @this.Impersonate( user, DateTime.UtcNow );
-
     }
 }

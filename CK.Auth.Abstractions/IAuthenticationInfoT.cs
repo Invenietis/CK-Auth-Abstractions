@@ -8,7 +8,7 @@ namespace CK.Auth
     /// This interface has been designed so that using <see cref="AuthLevel.Unsafe"/> requires
     /// an explicit use of <see cref="UnsafeUser"/> or <see cref="UnsafeActualUser"/>.
     /// </summary>
-    public interface IAuthenticationInfo<TUserInfo> : IAuthenticationInfo where TUserInfo : IUserInfo
+    public interface IAuthenticationInfo<out TUserInfo> : IAuthenticationInfo where TUserInfo : IUserInfo
     {
         /// <summary>
         /// Gets the user information itself when <see cref="Level"/> is <see cref="AuthLevel.Normal"/> 
@@ -37,15 +37,6 @@ namespace CK.Auth
         /// an impersonated administrator/tester can continue to challenge a system in this case.
         /// </summary>
         new TUserInfo UnsafeActualUser { get; }
-
-        /// <summary>
-        /// Impersonates this <see cref="ActualUser"/>: the <see cref="User"/> will be the new one.
-        /// Calling this on the anonymous MUST throw an <see cref="InvalidOperationException"/>.
-        /// </summary>
-        /// <param name="user">The new impersonated user.</param>
-        /// <param name="utcNow">The "current" date and time to challenge.</param>
-        /// <returns>This or a new new authentication info object.</returns>
-        IAuthenticationInfo<TUserInfo> Impersonate( TUserInfo user, DateTime utcNow );
 
     }
 }
