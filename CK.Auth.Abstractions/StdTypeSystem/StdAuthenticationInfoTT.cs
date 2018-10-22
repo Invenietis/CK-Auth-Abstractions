@@ -32,7 +32,7 @@ namespace CK.Auth
         /// <param name="expires">Expiration must occur after <paramref name="utcNow"/> otherwise <see cref="Level"/> is <see cref="AuthLevel.Unsafe"/>.</param>
         /// <param name="criticalExpires">Expiration must occur after <paramref name="utcNow"/> in order for <see cref="Level"/> to be <see cref="AuthLevel.Critical"/>.</param>
         /// <param name="utcNow">The "current" date and time.</param>
-        public StdAuthenticationInfo(
+        protected StdAuthenticationInfo(
             StdUserInfoType<TUserInfo> userInfoType,
             TUserInfo actualUser,
             TUserInfo user,

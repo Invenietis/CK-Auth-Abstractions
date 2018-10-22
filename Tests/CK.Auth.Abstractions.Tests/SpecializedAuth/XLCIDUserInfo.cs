@@ -16,6 +16,7 @@ namespace CK.Auth.Abstractions.Tests.SpecializedAuth
         public XLCIDUserInfo( int xlcid, int userId, string userName, IReadOnlyList<IUserSchemeInfo> schemes = null )
             : base( userId, userName, schemes )
         {
+            XLCID = xlcid;
         }
 
         public int XLCID { get; }

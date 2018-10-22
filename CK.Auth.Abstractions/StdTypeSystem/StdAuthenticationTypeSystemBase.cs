@@ -15,9 +15,9 @@ namespace CK.Auth
     /// builders and converters of the <see cref="IAuthenticationInfo"/> type.
     /// </summary>
     public abstract class StdAuthenticationTypeSystemBase<TAuthInfo,TUserInfo,TFinalAuthInfo> : IAuthenticationTypeSystem<TFinalAuthInfo, TUserInfo>
-    where TAuthInfo : StdAuthenticationInfo<TUserInfo, TAuthInfo>
-    where TFinalAuthInfo : TAuthInfo
-    where TUserInfo : StdUserInfo
+            where TAuthInfo : StdAuthenticationInfo<TUserInfo, TAuthInfo>
+            where TFinalAuthInfo : TAuthInfo
+            where TUserInfo : StdUserInfo
     {
         string _authenticationType = "CKA";
 
@@ -275,7 +275,6 @@ namespace CK.Auth
             if( info.IsNullOrNone() ) w.Write( 0 );
             else
             {
-                if( !(info is TAuthInfo tInfo) ) throw new ArgumentException( $"Must be a '{typeof( TAuthInfo ).FullName}'.", nameof( info ) );
                 w.Write( 1 );
                 int flag = 0;
                 if( info.IsImpersonated ) flag |= 1;

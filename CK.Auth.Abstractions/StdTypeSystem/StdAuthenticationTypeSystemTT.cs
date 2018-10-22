@@ -9,6 +9,12 @@ using Newtonsoft.Json;
 
 namespace CK.Auth
 {
+    /// <summary>
+    /// Intermediate class that enables to avoid the duplicated <typeparamref name="TAuthInfo"/>
+    /// required by the actual <see cref="StdAuthenticationTypeSystem{TAuthInfo, TUserInfo, TAuthInfo}"/>.
+    /// </summary>
+    /// <typeparam name="TAuthInfo">Type of the authentication info.</typeparam>
+    /// <typeparam name="TUserInfo">Type of the user info.</typeparam>
     public abstract class StdAuthenticationTypeSystem<TAuthInfo, TUserInfo> : StdAuthenticationTypeSystemBase<TAuthInfo, TUserInfo, TAuthInfo>
         where TAuthInfo : StdAuthenticationInfo<TUserInfo, TAuthInfo>
         where TUserInfo : StdUserInfo

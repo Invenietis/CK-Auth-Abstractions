@@ -9,6 +9,11 @@ using Newtonsoft.Json;
 
 namespace CK.Auth
 {
+    /// <summary>
+    /// Standard type system to be used when only <see cref="IUserInfo"/> is specialized:
+    /// the authentication info is the standard <see cref="StdAuthenticationInfo{TUserInfo}"/>.
+    /// </summary>
+    /// <typeparam name="TUserInfo"></typeparam>
     public abstract class StdAuthenticationTypeSystem<TUserInfo> : StdAuthenticationTypeSystem<StdAuthenticationInfo<TUserInfo>, TUserInfo>
         where TUserInfo : StdUserInfo
     {
