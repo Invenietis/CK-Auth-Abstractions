@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -144,16 +144,19 @@ namespace CK.Auth
         void IUserInfoType.Write( BinaryWriter w, IUserInfo info )
         {
             if( info == null ) w.Write( 0 );
-            else w.Write( 1 );
-            w.Write( info.UserId );
-            w.Write( info.UserName );
-            w.Write( info.Schemes.Count );
-            foreach( var p in info.Schemes )
+            else
             {
-                w.Write( p.Name );
-                w.Write( p.LastUsed.ToBinary() );
+                w.Write( 1 );
+                w.Write( info.UserId );
+                w.Write( info.UserName );
+                w.Write( info.Schemes.Count );
+                foreach( var p in info.Schemes )
+                {
+                    w.Write( p.Name );
+                    w.Write( p.LastUsed.ToBinary() );
+                }
+                WriteUserInfoRemainder( w, info );
             }
-            WriteUserInfoRemainder( w, info );
         }
 
         IUserInfo IUserInfoType.Read( BinaryReader r )
