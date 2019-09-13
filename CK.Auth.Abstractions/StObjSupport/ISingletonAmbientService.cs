@@ -9,7 +9,7 @@ namespace CK.Auth.StObjSupport
     /// The name of the interface is enough and is defined here because CK.StObj.Model must not
     /// be a dependency of this abstract package.
     /// </summary>
-    public interface ISingletonAmbientService
+    public interface ISingletonAutoService
     {
     }
 }
