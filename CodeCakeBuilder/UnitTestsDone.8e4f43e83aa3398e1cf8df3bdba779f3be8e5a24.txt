@@ -1,2 +1,0 @@
-C:/Dev/CK/CK-Core-Projects/CK-Auth-Abstractions/Tests/CK.Auth.Abstractions.Tests/bin/Debug/net461/CK.Auth.Abstractions.Tests.exe
-C:/Dev/CK/CK-Core-Projects/CK-Auth-Abstractions/Tests/CK.Auth.Abstractions.Tests/bin/Debug/netcoreapp2.1/CK.Auth.Abstractions.Tests.dll
