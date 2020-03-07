@@ -185,7 +185,6 @@ namespace CodeCake
                             {
                                 options.ArgumentCustomization = args => args.Append( "/nodeReuse:false" );
                             }
-
                             _globalInfo.Cake.DotNetCoreTest( projectPath, options );
                         }
                     }
