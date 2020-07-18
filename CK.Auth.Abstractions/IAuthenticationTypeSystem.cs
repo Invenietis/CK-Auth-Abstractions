@@ -8,7 +8,7 @@ namespace CK.Auth
     /// Unifies all types managers related to authentication.
     /// <see cref="StdAuthenticationTypeSystem"/> is an extensible of this type system.
     /// </summary>
-    public interface IAuthenticationTypeSystem : StObjSupport.ISingletonAmbientService
+    public interface IAuthenticationTypeSystem : StObjSupport.ISingletonAutoService
     {
         /// <summary>
         /// Gets the <see cref="ClaimsIdentity.AuthenticationType"/> used by <see cref="IAuthenticationInfoType.ToClaimsIdentity"/>
