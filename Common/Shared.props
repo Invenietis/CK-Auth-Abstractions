@@ -33,7 +33,7 @@
 
   <!--<StandardProperties>-->
   <PropertyGroup>
-    <RepositoryUrl>https://github.com/Invenietis/CK-Auth-Abstractions.git</RepositoryUrl>
+    <RepositoryUrl>https://github.com/Invenietis/CK-Auth-Abstractions</RepositoryUrl>
     <ProductName>CK</ProductName>
     <Company>Signature Code</Company>
     <Authors>Signature Code</Authors>
