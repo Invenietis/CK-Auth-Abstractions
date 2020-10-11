@@ -39,6 +39,15 @@ namespace CK.Auth
         public static IAuthenticationInfo SetCriticalExpires( this IAuthenticationInfo @this, DateTime? criticalExpires ) => @this.SetCriticalExpires( criticalExpires, DateTime.UtcNow );
 
         /// <summary>
+        /// Returns a new authentication information with <see cref="IAuthenticationInfo.DeviceId"/> sets
+        /// to the new value (or this authentication info if it is the same).
+        /// </summary>
+        /// <param name="this">This authentication info.</param>
+        /// <param name="deviceId">The new device identifier.</param>
+        /// <returns>The updated authentication info.</returns>
+        public static IAuthenticationInfo SetDeviceId( this IAuthenticationInfo @this, string deviceId ) => @this.SetDeviceId( deviceId, DateTime.UtcNow );
+
+        /// <summary>
         /// Removes impersonation if any (the <see cref="IAuthenticationInfo.ActualUser"/> 
         /// becomes the <see cref="IAuthenticationInfo.User"/>).
         /// </summary>

@@ -109,5 +109,13 @@ namespace CK.Auth
         /// <returns>This or a new new authentication info object.</returns>
         IAuthenticationInfo Impersonate( IUserInfo user, DateTime utcNow );
 
+        /// <summary>
+        /// Sets a device identifier.
+        /// </summary>
+        /// <param name="deviceId">The new device identifier.</param>
+        /// <param name="utcNow">The "current" date and time to challenge to update the level.</param>
+        /// <returns>This or a new new authentication info object.</returns>
+        IAuthenticationInfo SetDeviceId( string deviceId, DateTime utcNow );
+
     }
 }

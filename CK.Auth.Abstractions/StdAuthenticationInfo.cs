@@ -187,6 +187,8 @@ namespace CK.Auth
 
         IAuthenticationInfo IAuthenticationInfo.SetCriticalExpires( DateTime? criticalExpires, DateTime utcNow ) => SetCriticalExpires( criticalExpires, utcNow );
 
+        IAuthenticationInfo IAuthenticationInfo.SetDeviceId( string deviceId, DateTime utcNow ) => SetDeviceId( deviceId, utcNow );
+
         /// <summary>
         /// Removes impersonation if any (the <see cref="ActualUser"/> becomes the <see cref="User"/>).
         /// </summary>
@@ -273,6 +275,18 @@ namespace CK.Auth
                 newExp = criticalExpires;
             }
             return Clone( _actualUser, _user, newExp, criticalExpires, _deviceId, utcNow );
+        }
+
+        /// <summary>
+        /// Returns a new authentication information with <see cref="DeviceId"/> sets
+        /// to the new value (or this authentication info if it is the same).
+        /// </summary>
+        /// <param name="deviceId">The new device identifier.</param>
+        /// <param name="utcNow">The "current" date and time to challenge.</param>
+        /// <returns>The updated authentication info.</returns>
+        public StdAuthenticationInfo SetDeviceId( string deviceId, DateTime utcNow )
+        {
+            return Clone( _actualUser, _user, _expires, _criticalExpires, deviceId, utcNow );
         }
 
         /// <summary>
