@@ -55,14 +55,14 @@ namespace CK.Auth
         /// Returns null if <paramref name="info"/> is null.
         /// <para>
         /// When <paramref name="userInfoOnly"/> is true, the <see cref="ClaimsIdentity.AuthenticationType"/> is
-        /// "CKA-S" (<see cref="ClaimAuthenticationTypeSimple"/>) and the created ClaimIdentity is simple and contains
-        /// the safe user claims ("name", "id" and "schemes").
+        /// "CKA-S" (<see cref="StdAuthenticationTypeSystem.ClaimAuthenticationTypeSimple"/>) and the created ClaimIdentity
+        /// is simple and contains the safe user claims ("name", "id" and "schemes").
         /// Expirations and device identifier appear on this simple primary ClaimsIdentity.
         /// </para>
         /// <para>
-        /// When <paramref name="userInfoOnly"/> is false, the claim's AuthenticationType is "CKA" (<see cref="ClaimAuthenticationType"/>)
+        /// When <paramref name="userInfoOnly"/> is false, the claim's AuthenticationType is "CKA" (<see cref="StdAuthenticationTypeSystem.ClaimAuthenticationType"/>)
         /// and the created ClaimIdentity contains the unsafe user claims: the subordinated <see cref="ClaimsIdentity.Actor"/> is used
-        /// for impersonation and contains a <see cref="AuthLevelKeyType"/> claim with the authentication level.
+        /// for impersonation and contains a <see cref="StdAuthenticationTypeSystem.AuthLevelKeyType"/> claim with the authentication level.
         /// Expirations and device identifier appear on the subordinated Actor identity. 
         /// </para>
         /// </summary>
