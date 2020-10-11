@@ -60,6 +60,12 @@ namespace CK.Auth
         bool IsImpersonated { get; }
 
         /// <summary>
+        /// Gets the device identifier.
+        /// Can be empty: the device is not identified in any way. 
+        /// </summary>
+        string DeviceId { get; }
+
+        /// <summary>
         /// Handles expiration checks by returning an updated information whenever <see cref="Expires"/>
         /// or <see cref="CriticalExpires"/> are greater than <paramref name="utcNow"/>.
         /// </summary>

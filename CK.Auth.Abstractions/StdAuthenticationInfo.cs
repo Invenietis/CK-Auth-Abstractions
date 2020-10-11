@@ -14,30 +14,33 @@ namespace CK.Auth
         readonly DateTime? _expires;
         readonly DateTime? _criticalExpires;
         readonly AuthLevel _level;
+        readonly string _deviceId;
         readonly IAuthenticationTypeSystem _typeSystem;
 
         /// <summary>
         /// Initializes a new <see cref="StdAuthenticationInfo"/>.
         /// </summary>
-        /// <param name="typeSystem">The type system. Must not be null.</param>
-        /// <param name="user">The user (and actual user). Can be null.</param>
+        /// <param name="typeSystem">The type system.</param>
+        /// <param name="user">The user (and actual user).</param>
         /// <param name="expires">Expiration of authentication.</param>
         /// <param name="criticalExpires">Expiration of critical authentication.</param>
-        public StdAuthenticationInfo( IAuthenticationTypeSystem typeSystem, IUserInfo user, DateTime? expires = null, DateTime? criticalExpires = null )
-            : this( typeSystem, user, null, expires, criticalExpires, DateTime.UtcNow )
+        /// <param name="deviceId">Device identifier. When not set <see cref="DeviceId"/> will default to the empty string.</param>
+        public StdAuthenticationInfo( IAuthenticationTypeSystem typeSystem, IUserInfo? user, DateTime? expires = null, DateTime? criticalExpires = null, string? deviceId = null )
+            : this( typeSystem, user, null, expires, criticalExpires, deviceId, DateTime.UtcNow )
         {
         }
 
         /// <summary>
         /// Initializes a new <see cref="StdAuthenticationInfo"/> with all its possible data.
         /// </summary>
-        /// <param name="typeSystem">The type system. Must not be null.</param>
-        /// <param name="actualUser">The actual user. Can be null.</param>
-        /// <param name="user">The user. Can be null.</param>
+        /// <param name="typeSystem">The type system.</param>
+        /// <param name="actualUser">The actual user.</param>
+        /// <param name="user">The user.</param>
         /// <param name="expires">Expiration must occur after <see cref="DateTime.UtcNow"/> otherwise <see cref="Level"/> is <see cref="AuthLevel.Unsafe"/>.</param>
         /// <param name="criticalExpires">Expiration must occur after DateTime.UtcNow in order for <see cref="Level"/> to be <see cref="AuthLevel.Critical"/>.</param>
-        public StdAuthenticationInfo( IAuthenticationTypeSystem typeSystem, IUserInfo actualUser, IUserInfo user, DateTime? expires, DateTime? criticalExpires )
-            : this( typeSystem, actualUser, user, expires, criticalExpires, DateTime.UtcNow )
+        /// <param name="deviceId">Device identifier. When not set <see cref="DeviceId"/> will default to the empty string.</param>
+        public StdAuthenticationInfo( IAuthenticationTypeSystem typeSystem, IUserInfo? actualUser, IUserInfo? user, DateTime? expires, DateTime? criticalExpires, string? deviceId = null )
+            : this( typeSystem, actualUser, user, expires, criticalExpires, deviceId, DateTime.UtcNow )
         {
         }
 
@@ -50,10 +53,12 @@ namespace CK.Auth
         /// <param name="user">The user. Can be null.</param>
         /// <param name="expires">Expiration must occur after <paramref name="utcNow"/> otherwise <see cref="Level"/> is <see cref="AuthLevel.Unsafe"/>.</param>
         /// <param name="criticalExpires">Expiration must occur after <paramref name="utcNow"/> in order for <see cref="Level"/> to be <see cref="AuthLevel.Critical"/>.</param>
+        /// <param name="deviceId">Device identifier. When not set <see cref="DeviceId"/> will default to the empty string.</param>
         /// <param name="utcNow">The "current" date and time.</param>
-        public StdAuthenticationInfo( IAuthenticationTypeSystem typeSystem, IUserInfo actualUser, IUserInfo user, DateTime? expires, DateTime? criticalExpires, DateTime utcNow )
+        public StdAuthenticationInfo( IAuthenticationTypeSystem typeSystem, IUserInfo? actualUser, IUserInfo? user, DateTime? expires, DateTime? criticalExpires, string? deviceId, DateTime utcNow )
         {
             if( typeSystem == null ) throw new ArgumentNullException( nameof( typeSystem ) );
+            _deviceId = deviceId ?? String.Empty;
             if( user == null )
             {
                 if( actualUser != null ) user = actualUser;
@@ -160,6 +165,12 @@ namespace CK.Auth
         public bool IsImpersonated => _user != _actualUser;
 
         /// <summary>
+        /// Gets the device identifier.
+        /// Can be empty: the device is not identified in any way. 
+        /// </summary>
+        public string DeviceId => _deviceId;
+
+        /// <summary>
         /// Handles expiration checks by returning an updated information whenever <see cref="Expires"/>
         /// or <see cref="CriticalExpires"/> are greater than <see cref="DateTime.UtcNow"/>.
         /// </summary>
@@ -184,7 +195,7 @@ namespace CK.Auth
         public StdAuthenticationInfo ClearImpersonation( DateTime utcNow )
         {
             return IsImpersonated
-                    ? Clone( _actualUser, _actualUser, _expires, _criticalExpires, utcNow )
+                    ? Clone( _actualUser, _actualUser, _expires, _criticalExpires, _deviceId, utcNow )
                     : CheckExpiration( utcNow );
         }
 
@@ -200,7 +211,7 @@ namespace CK.Auth
             if( user == null ) user = _typeSystem.UserInfo.Anonymous;
             if( _actualUser.UserId == 0 ) throw new InvalidOperationException();
             return _user != user
-                    ? Clone( _actualUser, user, _expires, _criticalExpires, utcNow )
+                    ? Clone( _actualUser, user, _expires, _criticalExpires, _deviceId, utcNow )
                     : CheckExpiration( utcNow );
         }
 
@@ -214,18 +225,20 @@ namespace CK.Auth
         {
             if( utcNow.Kind != DateTimeKind.Utc ) throw new ArgumentException( "Kind must be Utc.", nameof( utcNow ) );
             var level = _level;
+            Debug.Assert( level != AuthLevel.Critical || _criticalExpires.HasValue, "Critical level => _criticalExpires !== null" );
             if( level < AuthLevel.Normal
-                || (level == AuthLevel.Critical && _criticalExpires.Value > utcNow) )
+                || (level == AuthLevel.Critical && _criticalExpires!.Value > utcNow) )
             {
                 return this;
             }
-            if( _expires.Value > utcNow )
+            Debug.Assert( _expires.HasValue );
+            if( _expires!.Value > utcNow )
             {
                 if( level == AuthLevel.Normal ) return this;
                 Debug.Assert( level == AuthLevel.Critical );
-                return Clone( _actualUser, _user, _expires, null, utcNow );
+                return Clone( _actualUser, _user, _expires, null, _deviceId, utcNow );
             }
-            return Clone( _actualUser, _user, null, null, utcNow );
+            return Clone( _actualUser, _user, null, null, _deviceId, utcNow );
         }
 
         /// <summary>
@@ -238,7 +251,7 @@ namespace CK.Auth
         public StdAuthenticationInfo SetExpires( DateTime? expires, DateTime utcNow )
         {
             return expires != _expires
-                    ? Clone( _actualUser, _user, expires, _criticalExpires, utcNow )
+                    ? Clone( _actualUser, _user, expires, _criticalExpires, _deviceId, utcNow )
                     : CheckExpiration( utcNow );
         }
 
@@ -259,7 +272,7 @@ namespace CK.Auth
             {
                 newExp = criticalExpires;
             }
-            return Clone( _actualUser, _user, newExp, criticalExpires, utcNow );
+            return Clone( _actualUser, _user, newExp, criticalExpires, _deviceId, utcNow );
         }
 
         /// <summary>
@@ -272,11 +285,12 @@ namespace CK.Auth
         /// <param name="user">The new user.</param>
         /// <param name="expires">The new expires time.</param>
         /// <param name="criticalExpires">The new critical expires time.</param>
+        /// <param name="deviceId">The new device identifier.</param>
         /// <param name="utcNow">The "current" date and time to challenge.</param>
         /// <returns>New authentication info.</returns>
-        protected virtual StdAuthenticationInfo Clone( IUserInfo actualUser, IUserInfo user, DateTime? expires, DateTime? criticalExpires, DateTime utcNow )
+        protected virtual StdAuthenticationInfo Clone( IUserInfo actualUser, IUserInfo user, DateTime? expires, DateTime? criticalExpires, string? deviceId, DateTime utcNow )
         {
-            return new StdAuthenticationInfo( _typeSystem, actualUser, user, expires, criticalExpires, utcNow );
+            return new StdAuthenticationInfo( _typeSystem, actualUser, user, expires, criticalExpires, deviceId, utcNow );
         }
     }
 }

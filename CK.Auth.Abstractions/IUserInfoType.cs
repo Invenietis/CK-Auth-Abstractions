@@ -22,7 +22,7 @@ namespace CK.Auth
         /// <param name="userId">The user identifier.</param>
         /// <param name="userName">The user name. Can be null or empty if and only if <paramref name="userId"/> is 0.</param>
         /// <param name="schemes">The schemes list.</param>
-        IUserInfo Create( int userId, string userName, IReadOnlyList<IUserSchemeInfo> schemes = null );
+        IUserInfo Create( int userId, string? userName, IReadOnlyList<IUserSchemeInfo>? schemes = null );
 
         /// <summary>
         /// Exports a <see cref="IUserInfo"/> to a list of claims.
@@ -30,7 +30,7 @@ namespace CK.Auth
         /// </summary>
         /// <param name="info">The user info.</param>
         /// <returns>The claims or null if <paramref name="info"/> is null.</returns>
-        List<Claim> ToClaims( IUserInfo info );
+        List<Claim>? ToClaims( IUserInfo? info );
 
         /// <summary>
         /// Exports a <see cref="IUserInfo"/> as a JObject.
@@ -38,7 +38,7 @@ namespace CK.Auth
         /// </summary>
         /// <param name="info">The user info.</param>
         /// <returns>The Json object or null if <paramref name="info"/> is null.</returns>
-        JObject ToJObject( IUserInfo info );
+        JObject? ToJObject( IUserInfo? info );
 
         /// <summary>
         /// Creates a <see cref="IUserInfo"/> from a ClaimsIdentity.
@@ -46,7 +46,7 @@ namespace CK.Auth
         /// </summary>
         /// <param name="id">The claims.</param>
         /// <returns>The extracted user info or null if <paramref name="id"/> is null.</returns>
-        IUserInfo FromClaims( IEnumerable<Claim> id );
+        IUserInfo? FromClaims( IEnumerable<Claim>? id );
 
         /// <summary>
         /// Creates a <see cref="IUserInfo"/> from a JObject.
@@ -58,24 +58,24 @@ namespace CK.Auth
         /// <exception cref="InvalidDataException">
         /// Whenever the object is not in the expected format.
         /// </exception>
-        IUserInfo FromJObject( JObject o );
+        IUserInfo? FromJObject( JObject? o );
 
         /// <summary>
         /// Writes the user information in binary format.
         /// </summary>
-        /// <param name="w">The binary writer (must not be null).</param>
-        /// <param name="info">The user info to write. Can be null.</param>
-        void Write( BinaryWriter w, IUserInfo info );
+        /// <param name="w">The binary writer.</param>
+        /// <param name="info">The user info to write.</param>
+        void Write( BinaryWriter w, IUserInfo? info );
 
         /// <summary>
         /// Reads a user information in binary format.
         /// Must throw <see cref="InvalidDataException"/> if the binary data is not valid.
         /// </summary>
-        /// <param name="r">The binary reader (must not be null).</param>
-        /// <returns>The user info. Can be null.</returns>
+        /// <param name="r">The binary reader.</param>
+        /// <returns>The user info (or null since null is handled by <see cref="Write(BinaryWriter, IUserInfo?)"/>).</returns>
         /// <exception cref="InvalidDataException">
         /// Whenever the binary data can not be read.
         /// </exception>
-        IUserInfo Read( BinaryReader r );
+        IUserInfo? Read( BinaryReader r );
     }
 }
