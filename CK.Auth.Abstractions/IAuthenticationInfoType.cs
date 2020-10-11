@@ -3,6 +3,7 @@ using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System;
 using System.IO;
+using System.Diagnostics.CodeAnalysis;
 
 namespace CK.Auth
 {
@@ -36,6 +37,7 @@ namespace CK.Auth
         /// </summary>
         /// <param name="p">The claims identity.</param>
         /// <returns>The extracted authentication info or null if <paramref name="p"/> is null.</returns>
+        [return: NotNullIfNotNull( "p" )]
         IAuthenticationInfo? FromClaimsIdentity( ClaimsIdentity? p );
 
         /// <summary>
@@ -48,6 +50,7 @@ namespace CK.Auth
         /// <exception cref="InvalidDataException">
         /// Whenever the object is not in the expected format.
         /// </exception>
+        [return: NotNullIfNotNull("o")]
         IAuthenticationInfo? FromJObject( JObject? o );
 
         /// <summary>
@@ -55,12 +58,12 @@ namespace CK.Auth
         /// Returns null if <paramref name="info"/> is null.
         /// <para>
         /// When <paramref name="userInfoOnly"/> is true, the <see cref="ClaimsIdentity.AuthenticationType"/> is
-        /// "CKA-S" (<see cref="StdAuthenticationTypeSystem.ClaimAuthenticationTypeSimple"/>) and the created ClaimIdentity
+        /// "CKA-S" (<see cref="IAuthenticationTypeSystem.ClaimAuthenticationTypeSimple"/>) and the created ClaimIdentity
         /// is simple and contains the safe user claims ("name", "id" and "schemes").
         /// Expirations and device identifier appear on this simple primary ClaimsIdentity.
         /// </para>
         /// <para>
-        /// When <paramref name="userInfoOnly"/> is false, the claim's AuthenticationType is "CKA" (<see cref="StdAuthenticationTypeSystem.ClaimAuthenticationType"/>)
+        /// When <paramref name="userInfoOnly"/> is false, the claim's AuthenticationType is "CKA" (<see cref="IAuthenticationTypeSystem.ClaimAuthenticationType"/>)
         /// and the created ClaimIdentity contains the unsafe user claims: the subordinated <see cref="ClaimsIdentity.Actor"/> is used
         /// for impersonation and contains a <see cref="StdAuthenticationTypeSystem.AuthLevelKeyType"/> claim with the authentication level.
         /// Expirations and device identifier appear on the subordinated Actor identity. 
@@ -72,6 +75,7 @@ namespace CK.Auth
         /// false to create a more complex ClaimsIdentity that uses the <see cref="ClaimsIdentity.Actor"/>.
         /// </param>
         /// <returns>Authentication information as a claim identity.</returns>
+        [return: NotNullIfNotNull( "info" )]
         ClaimsIdentity? ToClaimsIdentity( IAuthenticationInfo? info, bool userInfoOnly );
 
         /// <summary>
@@ -80,6 +84,7 @@ namespace CK.Auth
         /// </summary>
         /// <param name="info">The authentication info.</param>
         /// <returns>The Json object or null if <paramref name="info"/> is null.</returns>
+        [return: NotNullIfNotNull( "info" )]
         JObject? ToJObject( IAuthenticationInfo? info );
 
         /// <summary>

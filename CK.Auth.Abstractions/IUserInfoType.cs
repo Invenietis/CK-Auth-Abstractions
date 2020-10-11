@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.IO;
+using System.Diagnostics.CodeAnalysis;
 
 namespace CK.Auth
 {
@@ -30,6 +31,7 @@ namespace CK.Auth
         /// </summary>
         /// <param name="info">The user info.</param>
         /// <returns>The claims or null if <paramref name="info"/> is null.</returns>
+        [return: NotNullIfNotNull( "info" )]
         List<Claim>? ToClaims( IUserInfo? info );
 
         /// <summary>
@@ -38,6 +40,7 @@ namespace CK.Auth
         /// </summary>
         /// <param name="info">The user info.</param>
         /// <returns>The Json object or null if <paramref name="info"/> is null.</returns>
+        [return: NotNullIfNotNull( "info" )]
         JObject? ToJObject( IUserInfo? info );
 
         /// <summary>
@@ -46,6 +49,7 @@ namespace CK.Auth
         /// </summary>
         /// <param name="id">The claims.</param>
         /// <returns>The extracted user info or null if <paramref name="id"/> is null.</returns>
+        [return: NotNullIfNotNull( "id" )]
         IUserInfo? FromClaims( IEnumerable<Claim>? id );
 
         /// <summary>
@@ -58,6 +62,7 @@ namespace CK.Auth
         /// <exception cref="InvalidDataException">
         /// Whenever the object is not in the expected format.
         /// </exception>
+        [return: NotNullIfNotNull( "o" )]
         IUserInfo? FromJObject( JObject? o );
 
         /// <summary>
