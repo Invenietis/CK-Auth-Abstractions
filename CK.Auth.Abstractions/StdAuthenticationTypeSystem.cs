@@ -406,7 +406,9 @@ namespace CK.Auth
         /// <returns>The authentication information.</returns>
         protected virtual IAuthenticationInfo CreateAuthenticationInfo( IUserInfo? user, DateTime? expires, DateTime? criticalExpires, string? deviceId )
         {
-            return user == null ? _none.Value : new StdAuthenticationInfo( this, user, expires, criticalExpires, deviceId );
+            return user == null && String.IsNullOrEmpty( deviceId )
+                    ? _none.Value
+                    : new StdAuthenticationInfo( this, user, expires, criticalExpires, deviceId );
         }
 
         /// <summary>

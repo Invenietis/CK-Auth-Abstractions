@@ -57,6 +57,45 @@ namespace CK.Auth.Abstractions.Tests
         }
 
         [Test]
+        public void using_StdAuthenticationTypeSystem_to_convert_UserInfo_objects_from_and_to_Claims()
+        {
+            var time = new DateTime( 2017, 4, 2, 14, 35, 59, DateTimeKind.Utc );
+            var u = new StdUserInfo( 3712, "Albert", new[] { new StdUserSchemeInfo( "Basic", time ) } );
+            JObject o = _typeSystem.UserInfo.ToJObject( u );
+            List<Claim> c = _typeSystem.UserInfo.ToClaims( u );
+            var u2 = _typeSystem.UserInfo.FromClaims( c );
+            u2.UserId.Should().Be( 3712 );
+            u2.UserName.Should().Be( "Albert" );
+            u2.Schemes.Should().HaveCount( 1 );
+            u2.Schemes[0].Name.Should().Be( "Basic" );
+            u2.Schemes[0].LastUsed.Should().Be( time );
+        }
+
+        static void CheckAnonymousValues( IUserInfo anonymous )
+        {
+            anonymous.Should().NotBeNull();
+            anonymous.UserId.Should().Be( 0 );
+            anonymous.UserName.Should().BeEmpty();
+            anonymous.Schemes.Should().BeEmpty();
+        }
+
+        [Test]
+        public void StdAuthenticationInfo_creates_anonymous_with_specific_device()
+        {
+            _typeSystem.AuthenticationInfo.None.DeviceId.Should().BeEmpty();
+            _typeSystem.AuthenticationInfo.Create( null ).Should().BeSameAs( _typeSystem.AuthenticationInfo.None );
+            _typeSystem.AuthenticationInfo.Create( null, deviceId: "" ).Should().BeSameAs( _typeSystem.AuthenticationInfo.None );
+
+            var withDevice = _typeSystem.AuthenticationInfo.Create( null, deviceId: "Yep" );
+            withDevice.Should().NotBeSameAs( _typeSystem.AuthenticationInfo.None );
+            withDevice.DeviceId.Should().Be( "Yep" );
+
+            var withWhiteDevice = _typeSystem.AuthenticationInfo.Create( null, deviceId: " " );
+            withWhiteDevice.Should().NotBeSameAs( _typeSystem.AuthenticationInfo.None );
+            withWhiteDevice.DeviceId.Should().Be( " " );
+        }
+
+        [Test]
         public void test_StdAuthenticationInfo_conversion_for_JObject_and_Binary_and_Claims()
         {
             var time1 = DateTime.UtcNow.AddDays( 1 );
@@ -106,27 +145,5 @@ namespace CK.Auth.Abstractions.Tests
             else o4.Should().BeEquivalentTo( o );
         }
 
-        [Test]
-        public void using_StdAuthenticationTypeSystem_to_convert_UserInfo_objects_from_and_to_Claims()
-        {
-            var time = new DateTime( 2017, 4, 2, 14, 35, 59, DateTimeKind.Utc );
-            var u = new StdUserInfo( 3712, "Albert", new[] { new StdUserSchemeInfo( "Basic", time ) } );
-            JObject o = _typeSystem.UserInfo.ToJObject( u );
-            List<Claim> c = _typeSystem.UserInfo.ToClaims( u );
-            var u2 = _typeSystem.UserInfo.FromClaims( c );
-            u2.UserId.Should().Be( 3712 );
-            u2.UserName.Should().Be( "Albert" );
-            u2.Schemes.Should().HaveCount( 1 );
-            u2.Schemes[0].Name.Should().Be( "Basic" );
-            u2.Schemes[0].LastUsed.Should().Be( time );
-        }
-
-        static void CheckAnonymousValues( IUserInfo anonymous )
-        {
-            anonymous.Should().NotBeNull();
-            anonymous.UserId.Should().Be( 0 );
-            anonymous.UserName.Should().BeEmpty();
-            anonymous.Schemes.Should().BeEmpty();
-        }
     }
 }
