@@ -39,8 +39,13 @@ namespace CK.Auth
         public static IAuthenticationInfo SetCriticalExpires( this IAuthenticationInfo @this, DateTime? criticalExpires ) => @this.SetCriticalExpires( criticalExpires, DateTime.UtcNow );
 
         /// <summary>
-        /// Returns a new authentication information with <see cref="IAuthenticationInfo.DeviceId"/> sets
-        /// to the new value (or this authentication info if it is the same).
+        /// Sets a device identifier.
+        /// The empty string is valid and denotes the absence of a specific device identifier.
+        /// <para>
+        /// Recall that a device identifier is not trustable in any way. Any information that may be sent to a user via
+        /// a device should actually be be sent to a couple (DeviceId, UserId) and the UserId should be eventually challenged
+        /// to avoid any kind of phishing.
+        /// </para>
         /// </summary>
         /// <param name="this">This authentication info.</param>
         /// <param name="deviceId">The new device identifier.</param>

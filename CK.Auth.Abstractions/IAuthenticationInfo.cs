@@ -62,6 +62,11 @@ namespace CK.Auth
         /// <summary>
         /// Gets the device identifier.
         /// Can be empty: the device is not identified in any way. 
+        /// <para>
+        /// A device identifier is not trustable in any way. Any information that may be sent to a user via
+        /// a device should actually be sent to a couple (DeviceId, UserId) and the UserId should be eventually
+        /// challenged to avoid any kind of phishing.
+        /// </para>
         /// </summary>
         string DeviceId { get; }
 
@@ -111,6 +116,12 @@ namespace CK.Auth
 
         /// <summary>
         /// Sets a device identifier.
+        /// The empty string is valid and denotes the absence of a specific device identifier.
+        /// <para>
+        /// Recall that a device identifier is not trustable in any way. Any information that may be sent to a user via
+        /// a device should actually be be sent to a couple (DeviceId, UserId) and the UserId should be eventually challenged
+        /// to avoid any kind of phishing.
+        /// </para>
         /// </summary>
         /// <param name="deviceId">The new device identifier.</param>
         /// <param name="utcNow">The "current" date and time to challenge to update the level.</param>

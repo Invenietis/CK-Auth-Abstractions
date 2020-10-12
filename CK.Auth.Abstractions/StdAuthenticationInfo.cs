@@ -117,57 +117,31 @@ namespace CK.Auth
             _level = level;
         }
 
-        /// <summary>
-        /// Gets the user information itself when <see cref="Level"/> is <see cref="AuthLevel.Normal"/> 
-        /// or <see cref="AuthLevel.Critical"/>.
-        /// (When Level is <see cref="AuthLevel.None"/> or <see cref="AuthLevel.Unsafe"/>, this User property 
-        /// is the anonymous.)
-        /// </summary>
+        /// <inheritdoc />
         public IUserInfo User => _level != AuthLevel.Unsafe ? _user : _typeSystem.UserInfo.Anonymous;
 
-        /// <summary>
-        /// Gets the actual user identifier that has been authenticate when <see cref="Level"/> is 
-        /// <see cref="AuthLevel.Normal"/> or <see cref="AuthLevel.Critical"/>.
-        /// (When Level is <see cref="AuthLevel.None"/> or <see cref="AuthLevel.Unsafe"/>, this actual user 
-        /// property is the anonymous.)
-        /// </summary>
+        /// <inheritdoc />
         public IUserInfo ActualUser => _level != AuthLevel.Unsafe ? _actualUser : _typeSystem.UserInfo.Anonymous;
 
-        /// <summary>
-        /// Gets the user information itself whatever <see cref="Level"/> is.
-        /// </summary>
+        /// <inheritdoc />
         public IUserInfo UnsafeUser => _user;
 
-        /// <summary>
-        /// Gets the actual user identifier that has been authenticated whatever <see cref="Level"/> is.
-        /// </summary>
+        /// <inheritdoc />
         public IUserInfo UnsafeActualUser => _actualUser;
 
-        /// <summary>
-        /// Gets the authentication level of this authentication information.
-        /// </summary>
+        /// <inheritdoc />
         public AuthLevel Level => _level;
 
-        /// <summary>
-        /// The expiration time for this authentication.
-        /// </summary>
+        /// <inheritdoc />
         public DateTime? Expires => _expires;
 
-        /// <summary>
-        /// The expiration time for critical authentication level.
-        /// </summary>
+        /// <inheritdoc />
         public DateTime? CriticalExpires => _criticalExpires;
 
-        /// <summary>
-        /// Gets whether the actual user is actually 
-        /// impersonated (<see cref="User"/> is not the same as <see cref="ActualUser"/>).
-        /// </summary>
+        /// <inheritdoc />
         public bool IsImpersonated => _user != _actualUser;
 
-        /// <summary>
-        /// Gets the device identifier.
-        /// Can be empty: the device is not identified in any way. 
-        /// </summary>
+        /// <inheritdoc />
         public string DeviceId => _deviceId;
 
         /// <summary>
@@ -189,11 +163,7 @@ namespace CK.Auth
 
         IAuthenticationInfo IAuthenticationInfo.SetDeviceId( string deviceId, DateTime utcNow ) => SetDeviceId( deviceId, utcNow );
 
-        /// <summary>
-        /// Removes impersonation if any (the <see cref="ActualUser"/> becomes the <see cref="User"/>).
-        /// </summary>
-        /// <param name="utcNow">The "current" date and time to challenge.</param>
-        /// <returns>This or a new authentication info object.</returns>
+        /// <inheritdoc cref="IAuthenticationInfo.ClearImpersonation(DateTime)"/>
         public StdAuthenticationInfo ClearImpersonation( DateTime utcNow )
         {
             return IsImpersonated
@@ -201,13 +171,7 @@ namespace CK.Auth
                     : CheckExpiration( utcNow );
         }
 
-        /// <summary>
-        /// Impersonates this <see cref="ActualUser"/>: the <see cref="User"/> will be the new one.
-        /// Calling this when <see cref="ActualUser"/> is the anonymous throws an <see cref="InvalidOperationException"/>.
-        /// </summary>
-        /// <param name="user">The new impersonated user.</param>
-        /// <param name="utcNow">The "current" date and time to challenge.</param>
-        /// <returns>This or a new new authentication info object.</returns>
+        /// <inheritdoc cref="IAuthenticationInfo.Impersonate(IUserInfo, DateTime)"/>
         public StdAuthenticationInfo Impersonate( IUserInfo user, DateTime utcNow )
         {
             if( user == null ) user = _typeSystem.UserInfo.Anonymous;
@@ -217,12 +181,7 @@ namespace CK.Auth
                     : CheckExpiration( utcNow );
         }
 
-        /// <summary>
-        /// Handles expiration checks by returning an updated information whenever <see cref="Expires"/>
-        /// or <see cref="CriticalExpires"/> are greater than <paramref name="utcNow"/>.
-        /// </summary>
-        /// <param name="utcNow">The "current" date and time to challenge.</param>
-        /// <returns>This or an updated authentication information.</returns>
+        /// <inheritdoc cref="IAuthenticationInfo.CheckExpiration(DateTime)"/>
         public StdAuthenticationInfo CheckExpiration( DateTime utcNow )
         {
             if( utcNow.Kind != DateTimeKind.Utc ) throw new ArgumentException( "Kind must be Utc.", nameof( utcNow ) );
@@ -243,13 +202,7 @@ namespace CK.Auth
             return Clone( _actualUser, _user, null, null, _deviceId, utcNow );
         }
 
-        /// <summary>
-        /// Returns a new authentication information with <see cref="Expires"/> sets
-        /// to the new value (or this authentication info if it is the same).
-        /// </summary>
-        /// <param name="expires">The new <see cref="Expires"/> value.</param>
-        /// <param name="utcNow">The "current" date and time to challenge.</param>
-        /// <returns>The updated authentication info.</returns>
+        /// <inheritdoc cref="IAuthenticationInfo.SetExpires(DateTime?, DateTime)"/>
         public StdAuthenticationInfo SetExpires( DateTime? expires, DateTime utcNow )
         {
             return expires != _expires
@@ -257,15 +210,7 @@ namespace CK.Auth
                     : CheckExpiration( utcNow );
         }
 
-        /// <summary>
-        /// Returns a new authentication information with <see cref="CriticalExpires"/> sets
-        /// to the new value (or this authentication info if it is the same).
-        /// If the new <paramref name="criticalExpires"/> is greater than <see cref="Expires"/>,
-        /// the new Expires is automatically boosted to the new critical expires time. 
-        /// </summary>
-        /// <param name="criticalExpires">The new CriticalExpires value.</param>
-        /// <param name="utcNow">The "current" date and time to challenge.</param>
-        /// <returns>The updated authentication info.</returns>
+        /// <inheritdoc cref="IAuthenticationInfo.SetCriticalExpires(DateTime?, DateTime)"/>
         public StdAuthenticationInfo SetCriticalExpires( DateTime? criticalExpires, DateTime utcNow )
         {
             if( criticalExpires == _criticalExpires ) return CheckExpiration( utcNow );
@@ -277,16 +222,12 @@ namespace CK.Auth
             return Clone( _actualUser, _user, newExp, criticalExpires, _deviceId, utcNow );
         }
 
-        /// <summary>
-        /// Returns a new authentication information with <see cref="DeviceId"/> sets
-        /// to the new value (or this authentication info if it is the same).
-        /// </summary>
-        /// <param name="deviceId">The new device identifier.</param>
-        /// <param name="utcNow">The "current" date and time to challenge.</param>
-        /// <returns>The updated authentication info.</returns>
+        /// <inheritdoc cref="IAuthenticationInfo.SetDeviceId(string, DateTime)" />
         public StdAuthenticationInfo SetDeviceId( string deviceId, DateTime utcNow )
         {
-            return Clone( _actualUser, _user, _expires, _criticalExpires, deviceId, utcNow );
+            return _deviceId != deviceId
+                    ? Clone( _actualUser, _user, _expires, _criticalExpires, deviceId, utcNow )
+                    : CheckExpiration( utcNow );
         }
 
         /// <summary>
