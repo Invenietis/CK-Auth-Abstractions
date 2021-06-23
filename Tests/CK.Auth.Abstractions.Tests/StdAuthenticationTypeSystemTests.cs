@@ -37,6 +37,20 @@ namespace CK.Auth.Abstractions.Tests
             _typeSystem.AuthenticationInfo.FromClaimsIdentity( other ).Should().BeNull();
         }
 
+
+        [Test]
+        public void Anobymous_is_not_authenticated_in_AuthenticationTypeSimple_thanks_to_ClaimsIdentityAnonymousNotAuthenticated()
+        {
+            var u = _typeSystem.UserInfo.Create( 345, "Kilo" );
+            var a = _typeSystem.AuthenticationInfo.Create( u, DateTime.UtcNow.AddDays( 1 ) );
+            var claim = _typeSystem.AuthenticationInfo.ToClaimsIdentity( a, true );
+
+            claim.IsAuthenticated.Should().BeTrue();
+
+            var anon = _typeSystem.AuthenticationInfo.ToClaimsIdentity( _typeSystem.AuthenticationInfo.None, true );
+            anon.IsAuthenticated.Should().BeFalse();
+        }
+
         [Test]
         public void using_StdAuthenticationTypeSystem_to_convert_UserInfo_objects_from_and_to_json()
         {

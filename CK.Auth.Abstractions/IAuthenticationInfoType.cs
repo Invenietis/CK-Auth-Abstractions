@@ -54,7 +54,7 @@ namespace CK.Auth
         IAuthenticationInfo? FromJObject( JObject? o );
 
         /// <summary>
-        /// Exports a <see cref="IAuthenticationInfo"/> as a claims identity object.
+        /// Exports a <see cref="IAuthenticationInfo"/> as a <see cref="ClaimsIdentityAnonymousNotAuthenticated"/> object.
         /// Returns null if <paramref name="info"/> is null.
         /// <para>
         /// When <paramref name="userInfoOnly"/> is true, the <see cref="ClaimsIdentity.AuthenticationType"/> is
@@ -76,7 +76,7 @@ namespace CK.Auth
         /// </param>
         /// <returns>Authentication information as a claim identity.</returns>
         [return: NotNullIfNotNull( "info" )]
-        ClaimsIdentity? ToClaimsIdentity( IAuthenticationInfo? info, bool userInfoOnly );
+        ClaimsIdentityAnonymousNotAuthenticated? ToClaimsIdentity( IAuthenticationInfo? info, bool userInfoOnly );
 
         /// <summary>
         /// Exports a <see cref="IAuthenticationInfo"/> as a JObject.
