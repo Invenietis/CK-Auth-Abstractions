@@ -3,6 +3,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Security.Claims;
@@ -263,6 +264,7 @@ namespace CK.Auth
         /// </summary>
         /// <param name="info">The user information.</param>
         /// <returns>A <see cref="ClaimsIdentity"/> object or null if info is null.</returns>
+        [return: NotNullIfNotNull( "info" )]
         protected virtual List<Claim>? UserInfoToClaims( IUserInfo? info )
         {
             if( info == null ) return null;
@@ -346,7 +348,7 @@ namespace CK.Auth
 
         IAuthenticationInfo? IAuthenticationInfoType.FromJObject( JObject? o ) => AuthenticationInfoFromJObject( o );
 
-        ClaimsIdentity? IAuthenticationInfoType.ToClaimsIdentity( IAuthenticationInfo? info, bool userInfoOnly ) => AuthenticationInfoToClaimsIdentity( info, userInfoOnly );
+        ClaimsIdentityAnonymousNotAuthenticated? IAuthenticationInfoType.ToClaimsIdentity( IAuthenticationInfo? info, bool userInfoOnly ) => AuthenticationInfoToClaimsIdentity( info, userInfoOnly );
 
         JObject? IAuthenticationInfoType.ToJObject( IAuthenticationInfo? info ) => AuthenticationInfoToJObject( info );
 
@@ -452,18 +454,18 @@ namespace CK.Auth
         }
 
         /// <inheritdoc cref="IAuthenticationInfoType.ToClaimsIdentity(IAuthenticationInfo?, bool)"/>
-        protected virtual ClaimsIdentity? AuthenticationInfoToClaimsIdentity( IAuthenticationInfo? info, bool userInfoOnly )
+        protected virtual ClaimsIdentityAnonymousNotAuthenticated? AuthenticationInfoToClaimsIdentity( IAuthenticationInfo? info, bool userInfoOnly )
         {
             if( info == null ) return null;
-            ClaimsIdentity id = userInfoOnly
-                                    ? new ClaimsIdentity( UserInfoToClaims( info.User ), ClaimAuthenticationTypeSimple, UserNameKeyType, null )
-                                    : new ClaimsIdentity( UserInfoToClaims( info.UnsafeUser ), ClaimAuthenticationType, UserNameKeyType, null );
-            ClaimsIdentity propertyBearer = id;
+            var id = userInfoOnly
+                        ? new ClaimsIdentityAnonymousNotAuthenticated( UserInfoToClaims( info.User ), ClaimAuthenticationTypeSimple, UserNameKeyType, null )
+                        : new ClaimsIdentityAnonymousNotAuthenticated( UserInfoToClaims( info.UnsafeUser ), ClaimAuthenticationType, UserNameKeyType, null );
+            ClaimsIdentityAnonymousNotAuthenticated propertyBearer = id;
             if( !userInfoOnly )
             {
                 if( info.IsImpersonated )
                 {
-                    id.Actor = propertyBearer = new ClaimsIdentity( UserInfoToClaims( info.UnsafeActualUser ), ClaimAuthenticationType, UserNameKeyType, null );
+                    id.Actor = propertyBearer = new ClaimsIdentityAnonymousNotAuthenticated( UserInfoToClaims( info.UnsafeActualUser ), ClaimAuthenticationType, UserNameKeyType, null );
                 }
                 propertyBearer.AddClaim( new Claim( AuthLevelKeyType, info.Level.ToString() ) );
             }
