@@ -3,6 +3,7 @@ using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System;
 using System.IO;
+using System.Diagnostics.CodeAnalysis;
 
 namespace CK.Auth
 {
@@ -13,21 +14,21 @@ namespace CK.Auth
     public interface IAuthenticationInfoType
     {
         /// <summary>
-        /// Gets the non authentication information: it has a <see cref="IAuthenticationInfo.Level"/> equals to
-        /// <see cref="AuthLevel.None"/> and is semantically the same as a null reference (all authentication
-        /// information with a None level are equivalent).
-        /// Use <see cref="AuthenticationExtensions.IsNullOrNone(IAuthenticationInfo)">IsNullOrNone</see> to 
-        /// easily test both cases.
+        /// Gets the "non authenticated" information: it has a <see cref="IAuthenticationInfo.Level"/> equals to
+        /// <see cref="AuthLevel.None"/> and an empty <see cref="IAuthenticationInfo.DeviceId"/>.
+        /// It is semantically the same as a null reference.
         /// </summary>
         IAuthenticationInfo None { get; }
 
         /// <summary>
         /// Creates a new <see cref="IAuthenticationInfo"/>.
         /// </summary>
-        /// <param name="user">The user (and actual user). Can be null.</param>
+        /// <param name="user">The user (and actual user).</param>
         /// <param name="expires">When null or already expired, Level is <see cref="AuthLevel.Unsafe"/>.</param>
         /// <param name="criticalExpires">Optional critical expiration.</param>
-        IAuthenticationInfo Create( IUserInfo user, DateTime? expires = null, DateTime? criticalExpires = null );
+        /// <param name="deviceId">Optional device identifier.</param>
+        /// <returns>The authentication info.</returns>
+        IAuthenticationInfo Create( IUserInfo? user, DateTime? expires = null, DateTime? criticalExpires = null, string? deviceId = null );
 
         /// <summary>
         /// Creates a <see cref="IAuthenticationInfo"/> from a ClaimsIdentity.
@@ -36,7 +37,8 @@ namespace CK.Auth
         /// </summary>
         /// <param name="p">The claims identity.</param>
         /// <returns>The extracted authentication info or null if <paramref name="p"/> is null.</returns>
-        IAuthenticationInfo FromClaimsIdentity( ClaimsIdentity p );
+        [return: NotNullIfNotNull( "p" )]
+        IAuthenticationInfo? FromClaimsIdentity( ClaimsIdentity? p );
 
         /// <summary>
         /// Creates a <see cref="IAuthenticationInfo"/> from a JObject.
@@ -48,48 +50,60 @@ namespace CK.Auth
         /// <exception cref="InvalidDataException">
         /// Whenever the object is not in the expected format.
         /// </exception>
-        IAuthenticationInfo FromJObject( JObject o );
+        [return: NotNullIfNotNull("o")]
+        IAuthenticationInfo? FromJObject( JObject? o );
 
         /// <summary>
-        /// Exports a <see cref="IAuthenticationInfo"/> as a claims identity object.
-        /// Must return null if <paramref name="info"/> is null or none.
-        /// (See <see cref="AuthenticationExtensions.IsNullOrNone(IAuthenticationInfo)">IsNullOrNone</see> extension method).
+        /// Exports a <see cref="IAuthenticationInfo"/> as a <see cref="ClaimsIdentityAnonymousNotAuthenticated"/> object.
+        /// Returns null if <paramref name="info"/> is null.
+        /// <para>
+        /// When <paramref name="userInfoOnly"/> is true, the <see cref="ClaimsIdentity.AuthenticationType"/> is
+        /// "CKA-S" (<see cref="IAuthenticationTypeSystem.ClaimAuthenticationTypeSimple"/>) and the created ClaimIdentity
+        /// is simple and contains the safe user claims ("name", "id" and "schemes").
+        /// Expirations and device identifier appear on this simple primary ClaimsIdentity.
+        /// </para>
+        /// <para>
+        /// When <paramref name="userInfoOnly"/> is false, the claim's AuthenticationType is "CKA" (<see cref="IAuthenticationTypeSystem.ClaimAuthenticationType"/>)
+        /// and the created ClaimIdentity contains the unsafe user claims: the subordinated <see cref="ClaimsIdentity.Actor"/> is used
+        /// for impersonation and contains a <see cref="StdAuthenticationTypeSystem.AuthLevelKeyType"/> claim with the authentication level.
+        /// Expirations and device identifier appear on the subordinated Actor identity. 
+        /// </para>
         /// </summary>
-        /// <param name="info">The authentication info.</param>
+        /// <param name="info">The authentication information.</param>
         /// <param name="userInfoOnly">
-        /// True to add (safe) user claims and ignore any impersonation.
-        /// False to add unsafe user claims, a claim for the authentication level,
-        /// the expirations if they exist and handle impersonation thanks to the <see cref="ClaimsIdentity.Actor"/>. 
+        /// True to add (safe) user claims (and ignore any impersonation) to a simple primary ClaimsIdentity,
+        /// false to create a more complex ClaimsIdentity that uses the <see cref="ClaimsIdentity.Actor"/>.
         /// </param>
-        /// <returns>The claims or null if <paramref name="info"/> is null.</returns>
-        ClaimsIdentity ToClaimsIdentity( IAuthenticationInfo info, bool userInfoOnly );
+        /// <returns>Authentication information as a claim identity.</returns>
+        [return: NotNullIfNotNull( "info" )]
+        ClaimsIdentityAnonymousNotAuthenticated? ToClaimsIdentity( IAuthenticationInfo? info, bool userInfoOnly );
 
         /// <summary>
         /// Exports a <see cref="IAuthenticationInfo"/> as a JObject.
-        /// Must return null if <paramref name="info"/> is null or none.
-        /// (See <see cref="AuthenticationExtensions.IsNullOrNone(IAuthenticationInfo)">IsNullOrNone</see> extension method).
+        /// Must return null if <paramref name="info"/> is null.
         /// </summary>
         /// <param name="info">The authentication info.</param>
         /// <returns>The Json object or null if <paramref name="info"/> is null.</returns>
-        JObject ToJObject( IAuthenticationInfo info );
+        [return: NotNullIfNotNull( "info" )]
+        JObject? ToJObject( IAuthenticationInfo? info );
 
         /// <summary>
         /// Writes the authentication information in binary format.
         /// </summary>
         /// <param name="w">The binary writer.</param>
-        /// <param name="info">The authentication info to write. Can be null.</param>
-        void Write( BinaryWriter w, IAuthenticationInfo info );
+        /// <param name="info">The authentication info to write.</param>
+        void Write( BinaryWriter w, IAuthenticationInfo? info );
 
         /// <summary>
         /// Reads a authentication information in binary format.
         /// Must throw <see cref="InvalidDataException"/> if the binary data is not valid.
         /// </summary>
-        /// <param name="r">The binary reader (must not be null).</param>
+        /// <param name="r">The binary reader.</param>
         /// <returns>The authentication info. Can be null.</returns>
         /// <exception cref="InvalidDataException">
         /// Whenever the binary data can not be read.
         /// </exception>
-        IAuthenticationInfo Read( BinaryReader r );
+        IAuthenticationInfo? Read( BinaryReader r );
 
 
     }

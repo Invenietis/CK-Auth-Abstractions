@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,14 +11,6 @@ namespace CK.Auth
     /// </summary>
     public static class AuthenticationExtensions
     {
-        /// <summary>
-        /// Tests a potential null or <see cref="AuthLevel.None"/> level: they are semantically
-        /// equivalent. All authentication information with a None level are equivalent.
-        /// </summary>
-        /// <param name="this">This authentication info.</param>
-        /// <returns>True if this authentication info is null or has a None level.</returns>
-        public static bool IsNullOrNone( this IAuthenticationInfo @this ) => @this == null || @this.Level == AuthLevel.None;
-
         /// <summary>
         /// Handles expiration checks by returning an updated information whenever <see cref="IAuthenticationInfo.Expires"/>
         /// or <see cref="IAuthenticationInfo.CriticalExpires"/> are greater than <see cref="DateTime.UtcNow"/>.
@@ -45,6 +37,20 @@ namespace CK.Auth
         /// <param name="criticalExpires">The new CriticalExpires value.</param>
         /// <returns>The updated authentication info.</returns>
         public static IAuthenticationInfo SetCriticalExpires( this IAuthenticationInfo @this, DateTime? criticalExpires ) => @this.SetCriticalExpires( criticalExpires, DateTime.UtcNow );
+
+        /// <summary>
+        /// Sets a device identifier.
+        /// The empty string is valid and denotes the absence of a specific device identifier.
+        /// <para>
+        /// Recall that a device identifier is not trustable in any way. Any information that may be sent to a user via
+        /// a device should actually be be sent to a couple (DeviceId, UserId) and the UserId should be eventually challenged
+        /// to avoid any kind of phishing.
+        /// </para>
+        /// </summary>
+        /// <param name="this">This authentication info.</param>
+        /// <param name="deviceId">The new device identifier.</param>
+        /// <returns>The updated authentication info.</returns>
+        public static IAuthenticationInfo SetDeviceId( this IAuthenticationInfo @this, string deviceId ) => @this.SetDeviceId( deviceId, DateTime.UtcNow );
 
         /// <summary>
         /// Removes impersonation if any (the <see cref="IAuthenticationInfo.ActualUser"/> 
