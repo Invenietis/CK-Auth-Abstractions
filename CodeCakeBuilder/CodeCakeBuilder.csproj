@@ -16,6 +16,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="NUnit.Runners.Net4" Version="2.6.4" />
-    <PackageReference Include="SimpleGitVersion.Cake" Version="6.0.0-r" />
+    <PackageReference Include="SimpleGitVersion.Cake" Version="6.0.0" />
   </ItemGroup>
 </Project>
