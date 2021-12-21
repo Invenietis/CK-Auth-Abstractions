@@ -111,7 +111,7 @@ namespace CK.Auth
         /// </summary>
         /// <param name="user">The new impersonated user.</param>
         /// <param name="utcNow">The "current" date and time to challenge.</param>
-        /// <returns>This or a new new authentication info object.</returns>
+        /// <returns>This or a new authentication info object.</returns>
         IAuthenticationInfo Impersonate( IUserInfo user, DateTime utcNow );
 
         /// <summary>
@@ -125,7 +125,7 @@ namespace CK.Auth
         /// </summary>
         /// <param name="deviceId">The new device identifier.</param>
         /// <param name="utcNow">The "current" date and time to challenge to update the level.</param>
-        /// <returns>This or a new new authentication info object.</returns>
+        /// <returns>This or a new authentication info object.</returns>
         IAuthenticationInfo SetDeviceId( string deviceId, DateTime utcNow );
 
     }

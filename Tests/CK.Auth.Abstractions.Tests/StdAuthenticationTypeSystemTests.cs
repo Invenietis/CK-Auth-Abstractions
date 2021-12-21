@@ -140,7 +140,7 @@ namespace CK.Auth.Abstractions.Tests
             var o3 = _typeSystem.AuthenticationInfo.FromClaimsIdentity( c );
             if( o == null ) o3.Should().BeNull();
             else o3.Should().BeEquivalentTo( o, options => options
-                         .Using<DateTime>( ctx => ctx.Subject.Should().BeCloseTo( ctx.Expectation, 1000 ) )
+                         .Using<DateTime>( ctx => ctx.Subject.Should().BeCloseTo( ctx.Expectation, TimeSpan.FromSeconds( 1 ) ) )
                          .WhenTypeIs<DateTime>() );
             // Using userInfoOnly export ("CKS-S").
             var cSafe = _typeSystem.AuthenticationInfo.ToClaimsIdentity( o, userInfoOnly: true );
@@ -150,7 +150,7 @@ namespace CK.Auth.Abstractions.Tests
             else
             {
                 oSafe.Should().BeEquivalentTo( userOnly, options => options
-                         .Using<DateTime>( ctx => ctx.Subject.Should().BeCloseTo( ctx.Expectation, 1000 ) )
+                         .Using<DateTime>( ctx => ctx.Subject.Should().BeCloseTo( ctx.Expectation, TimeSpan.FromSeconds( 1 ) ) )
                          .WhenTypeIs<DateTime>() );
             }
             // Binary serialization.
