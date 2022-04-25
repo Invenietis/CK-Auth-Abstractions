@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\Common\Shared.props" />
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>net6</TargetFrameworks>
     <Description>Defines IUserInfo, IAuthenticationInfo as well as default implementations like StdUserInfo, StdAuthenticationInfo and extensible StdAuthenticationTypeSystem.</Description>
-    <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="System.Security.Claims" Version="4.3.0" />
+    <PackageReference Include="CK.Core" Version="15.0.0-r04-02-0023-develop" />
   </ItemGroup>
 </Project>
