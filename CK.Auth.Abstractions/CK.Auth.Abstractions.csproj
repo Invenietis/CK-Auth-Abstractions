@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="..\Common\Shared.props" />
   <PropertyGroup>
     <TargetFrameworks>net6</TargetFrameworks>
     <Description>Defines IUserInfo, IAuthenticationInfo as well as default implementations like StdUserInfo, StdAuthenticationInfo and extensible StdAuthenticationTypeSystem.</Description>
