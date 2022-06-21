@@ -7,6 +7,6 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="System.Security.Claims" Version="4.3.0" />
-    <PackageReference Include="CK.Core" Version="15.0.0-r06-00-0006-develop" />
+    <PackageReference Include="CK.Core" Version="15.0.0-r06-00-0007-develop" />
   </ItemGroup>
 </Project>
