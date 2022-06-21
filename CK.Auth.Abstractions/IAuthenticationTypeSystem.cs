@@ -1,6 +1,4 @@
 using System.Security.Claims;
-using Newtonsoft.Json.Linq;
-using System.Collections.Generic;
 
 namespace CK.Auth
 {
@@ -8,7 +6,7 @@ namespace CK.Auth
     /// Unifies all types managers related to authentication.
     /// <see cref="StdAuthenticationTypeSystem"/> is an extensible of this type system.
     /// </summary>
-    public interface IAuthenticationTypeSystem : StObjSupport.ISingletonAutoService
+    public interface IAuthenticationTypeSystem : CK.Core.ISingletonAutoService
     {
         /// <summary>
         /// Gets the <see cref="ClaimsIdentity.AuthenticationType"/> used by <see cref="IAuthenticationInfoType.ToClaimsIdentity"/>
@@ -20,7 +18,7 @@ namespace CK.Auth
 
         /// <summary>
         /// Gets the <see cref="ClaimsIdentity.AuthenticationType"/> used by <see cref="IAuthenticationInfoType.ToClaimsIdentity"/>
-        /// when exporting only the saf user claims and enforced by <see cref="IAuthenticationInfoType.FromClaimsIdentity"/>.
+        /// when exporting only the safe user claims and enforced by <see cref="IAuthenticationInfoType.FromClaimsIdentity"/>.
         /// Always equal to "<see cref="ClaimAuthenticationType"/>-S" (defaults to "CKA-S").
         /// </summary>
         string ClaimAuthenticationTypeSimple { get; }

@@ -39,7 +39,7 @@ namespace CK.Auth.Abstractions.Tests
 
 
         [Test]
-        public void Anobymous_is_not_authenticated_in_AuthenticationTypeSimple_thanks_to_ClaimsIdentityAnonymousNotAuthenticated()
+        public void Anonymous_is_not_authenticated_in_AuthenticationTypeSimple_thanks_to_ClaimsIdentityAnonymousNotAuthenticated()
         {
             var u = _typeSystem.UserInfo.Create( 345, "Kilo" );
             var a = _typeSystem.AuthenticationInfo.Create( u, DateTime.UtcNow.AddDays( 1 ) );
@@ -49,6 +49,9 @@ namespace CK.Auth.Abstractions.Tests
 
             var anon = _typeSystem.AuthenticationInfo.ToClaimsIdentity( _typeSystem.AuthenticationInfo.None, true );
             anon.IsAuthenticated.Should().BeFalse();
+
+            var anonBase = new ClaimsIdentity( anon );
+            anonBase.IsAuthenticated.Should().BeTrue();
         }
 
         [Test]
@@ -137,7 +140,7 @@ namespace CK.Auth.Abstractions.Tests
             var o3 = _typeSystem.AuthenticationInfo.FromClaimsIdentity( c );
             if( o == null ) o3.Should().BeNull();
             else o3.Should().BeEquivalentTo( o, options => options
-                         .Using<DateTime>( ctx => ctx.Subject.Should().BeCloseTo( ctx.Expectation, 1000 ) )
+                         .Using<DateTime>( ctx => ctx.Subject.Should().BeCloseTo( ctx.Expectation, TimeSpan.FromSeconds( 1 ) ) )
                          .WhenTypeIs<DateTime>() );
             // Using userInfoOnly export ("CKS-S").
             var cSafe = _typeSystem.AuthenticationInfo.ToClaimsIdentity( o, userInfoOnly: true );
@@ -147,7 +150,7 @@ namespace CK.Auth.Abstractions.Tests
             else
             {
                 oSafe.Should().BeEquivalentTo( userOnly, options => options
-                         .Using<DateTime>( ctx => ctx.Subject.Should().BeCloseTo( ctx.Expectation, 1000 ) )
+                         .Using<DateTime>( ctx => ctx.Subject.Should().BeCloseTo( ctx.Expectation, TimeSpan.FromSeconds( 1 ) ) )
                          .WhenTypeIs<DateTime>() );
             }
             // Binary serialization.
