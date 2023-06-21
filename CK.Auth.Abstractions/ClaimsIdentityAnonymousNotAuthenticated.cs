@@ -67,13 +67,13 @@ namespace CK.Auth
         }
 
         /// <inheritdoc />
-        public ClaimsIdentityAnonymousNotAuthenticated( IEnumerable<Claim> claims, string authenticationType, string nameType, string roleType )
+        public ClaimsIdentityAnonymousNotAuthenticated( IEnumerable<Claim> claims, string authenticationType, string nameType, string? roleType )
             : base( claims, authenticationType, nameType, roleType )
         {
         }
 
         /// <inheritdoc />
-        public ClaimsIdentityAnonymousNotAuthenticated( IIdentity identity, IEnumerable<Claim> claims, string authenticationType, string nameType, string roleType )
+        public ClaimsIdentityAnonymousNotAuthenticated( IIdentity identity, IEnumerable<Claim> claims, string authenticationType, string nameType, string? roleType )
             : base( identity, claims, authenticationType, nameType, roleType )
         {
         }
