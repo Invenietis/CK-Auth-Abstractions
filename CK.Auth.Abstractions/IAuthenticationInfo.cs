@@ -1,3 +1,4 @@
+using CK.Core;
 using System;
 
 namespace CK.Auth
@@ -8,6 +9,7 @@ namespace CK.Auth
     /// This interface has been designed so that using <see cref="AuthLevel.Unsafe"/> requires
     /// an explicit use of <see cref="UnsafeUser"/> or <see cref="UnsafeActualUser"/>.
     /// </summary>
+    [EndpointScopedService( isUbiquitousEndpointInfo: true )]
     public interface IAuthenticationInfo
     {
         /// <summary>
@@ -19,17 +21,17 @@ namespace CK.Auth
         IUserInfo User { get; }
 
         /// <summary>
-        /// Gets the actual user identifier that has been authenticate when <see cref="Level"/> is 
+        /// Gets the user information itself whatever <see cref="Level"/> is.
+        /// </summary>
+        IUserInfo UnsafeUser { get; }
+
+        /// <summary>
+        /// Gets the actual user identifier that has been authenticated when <see cref="Level"/> is 
         /// <see cref="AuthLevel.Normal"/> or <see cref="AuthLevel.Critical"/>.
         /// (When Level is <see cref="AuthLevel.None"/> or <see cref="AuthLevel.Unsafe"/>, this actual user 
         /// property is the anonymous.)
         /// </summary>
         IUserInfo ActualUser { get; }
-
-        /// <summary>
-        /// Gets the user information itself whatever <see cref="Level"/> is.
-        /// </summary>
-        IUserInfo UnsafeUser { get; }
 
         /// <summary>
         /// Gets the actual user identifier that has been authenticated whatever <see cref="Level"/> is.

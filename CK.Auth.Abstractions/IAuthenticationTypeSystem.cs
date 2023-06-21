@@ -1,12 +1,13 @@
+using CK.Core;
 using System.Security.Claims;
 
 namespace CK.Auth
 {
     /// <summary>
     /// Unifies all types managers related to authentication.
-    /// <see cref="StdAuthenticationTypeSystem"/> is an extensible of this type system.
+    /// <see cref="StdAuthenticationTypeSystem"/> is an extensible implementation of this type system.
     /// </summary>
-    public interface IAuthenticationTypeSystem : CK.Core.ISingletonAutoService
+    public interface IAuthenticationTypeSystem : IEndpointUbiquitousServiceDefault<IAuthenticationInfo>
     {
         /// <summary>
         /// Gets the <see cref="ClaimsIdentity.AuthenticationType"/> used by <see cref="IAuthenticationInfoType.ToClaimsIdentity"/>
