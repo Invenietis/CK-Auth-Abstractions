@@ -7,10 +7,10 @@ namespace CK.Auth
     /// Primary contract for authentication: an authentication information handles
     /// authentication level, impersonation and expiration date.
     /// This interface has been designed so that using <see cref="AuthLevel.Unsafe"/> requires
-    /// an explicit use of <see cref="UnsafeUser"/> or <see cref="UnsafeActualUser"/>.
+    /// an explicit use of <see cref="UnsafeUser"/>.
     /// </summary>
     [EndpointScopedService( isUbiquitousEndpointInfo: true )]
-    public interface IAuthenticationInfo
+    public interface IAuthenticationInfo : IScopedAutoService
     {
         /// <summary>
         /// Gets the user information itself when <see cref="Level"/> is <see cref="AuthLevel.Normal"/> 
