@@ -1,3 +1,4 @@
+using CK.Core;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -317,6 +318,8 @@ namespace CK.Auth
         #region IAuthenticationInfo
 
         IAuthenticationInfo IAuthenticationInfoType.None => _none.Value;
+
+        IAuthenticationInfo IEndpointUbiquitousServiceDefault<IAuthenticationInfo>.Default => _none.Value;
 
         IAuthenticationInfo IAuthenticationInfoType.Create( IUserInfo? user, DateTime? expires, DateTime? criticalExpires, string? deviceId ) => CreateAuthenticationInfo( user, expires, criticalExpires, deviceId );
 
