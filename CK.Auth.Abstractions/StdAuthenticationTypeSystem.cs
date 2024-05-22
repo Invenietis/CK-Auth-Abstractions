@@ -319,7 +319,7 @@ namespace CK.Auth
 
         IAuthenticationInfo IAuthenticationInfoType.None => _none.Value;
 
-        IAuthenticationInfo IEndpointUbiquitousServiceDefault<IAuthenticationInfo>.Default => _none.Value;
+        IAuthenticationInfo IAmbientServiceDefaultProvider<IAuthenticationInfo>.Default => _none.Value;
 
         IAuthenticationInfo IAuthenticationInfoType.Create( IUserInfo? user, DateTime? expires, DateTime? criticalExpires, string? deviceId ) => CreateAuthenticationInfo( user, expires, criticalExpires, deviceId );
 
