@@ -6,6 +6,6 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="CK.ActivityMonitor.SimpleSender" Version="20.0.1--0007-develop" />
+    <PackageReference Include="CK.ActivityMonitor.SimpleSender" Version="20.0.1--0008-develop" />
   </ItemGroup>
 </Project>
