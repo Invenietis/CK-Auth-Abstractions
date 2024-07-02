@@ -2,7 +2,6 @@
   <PropertyGroup>
     <TargetFrameworks>net6</TargetFrameworks>
     <Description>Defines IUserInfo, IAuthenticationInfo as well as default implementations like StdUserInfo, StdAuthenticationInfo and extensible StdAuthenticationTypeSystem.</Description>
-    <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
