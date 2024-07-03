@@ -9,8 +9,7 @@ namespace CK.Auth
     /// This interface has been designed so that using <see cref="AuthLevel.Unsafe"/> requires
     /// an explicit use of <see cref="UnsafeUser"/>.
     /// </summary>
-    [EndpointScopedService( isUbiquitousEndpointInfo: true )]
-    public interface IAuthenticationInfo : IScopedAutoService
+    public interface IAuthenticationInfo : IAmbientAutoService
     {
         /// <summary>
         /// Gets the user information itself when <see cref="Level"/> is <see cref="AuthLevel.Normal"/> 
