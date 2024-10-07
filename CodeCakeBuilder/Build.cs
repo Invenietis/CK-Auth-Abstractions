@@ -46,8 +46,8 @@ public partial class Build : CodeCakeHost
                                  || Cake.ReadInteractiveOption( "RunUnitTests", "Run Unit Tests?", 'Y', 'N' ) == 'Y' )
             .Does( () =>
             {
-                
-              globalInfo.GetDotnetSolution().SolutionTest();
+
+                globalInfo.GetDotnetSolution().SolutionTest();
             } );
 
         Task( "Create-NuGet-Packages" )

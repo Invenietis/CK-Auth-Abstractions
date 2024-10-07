@@ -254,7 +254,7 @@ public class StdAuthenticationTypeSystem : IAuthenticationTypeSystem, IAuthentic
         }
         catch( Exception ex )
         {
-            throw new InvalidDataException( o.ToString( Formatting.None), ex );
+            throw new InvalidDataException( o.ToString( Formatting.None ), ex );
         }
     }
 

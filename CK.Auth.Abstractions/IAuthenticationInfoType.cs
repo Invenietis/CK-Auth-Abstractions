@@ -50,7 +50,7 @@ public interface IAuthenticationInfoType
     /// <exception cref="InvalidDataException">
     /// Whenever the object is not in the expected format.
     /// </exception>
-    [return: NotNullIfNotNull("o")]
+    [return: NotNullIfNotNull( "o" )]
     IAuthenticationInfo? FromJObject( JObject? o );
 
     /// <summary>
