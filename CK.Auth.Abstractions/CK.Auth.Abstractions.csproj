@@ -6,6 +6,6 @@
   <ItemGroup>
     <PackageReference Include="CK.Abstractions" Version="27.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="CK.ActivityMonitor.SimpleSender" Version="22.0.0" />
+    <PackageReference Include="CK.ActivityMonitor.SimpleSender" Version="22.1.0" />
   </ItemGroup>
 </Project>
