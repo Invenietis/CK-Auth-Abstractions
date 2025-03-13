@@ -59,7 +59,7 @@ public class StdAuthenticationTypeSystemTests
     public void using_StdAuthenticationTypeSystem_to_convert_UserInfo_objects_from_and_to_json()
     {
         var time = new DateTime( 2017, 4, 2, 14, 35, 59, DateTimeKind.Utc );
-        var u = _typeSystem.UserInfo.Create( 3712, "Albert", new[] { new StdUserSchemeInfo( "Basic", time ) } );
+        var u = _typeSystem.UserInfo.Create( 3712, "Albert", new[] { new UserSchemeInfo( "Basic", time ) } );
         JObject o = _typeSystem.UserInfo.ToJObject( u );
         o["id"].Value<string>().ShouldBe( "3712" );
         o["name"].Value<string>().ShouldBe( "Albert" );
@@ -78,7 +78,7 @@ public class StdAuthenticationTypeSystemTests
     public void using_StdAuthenticationTypeSystem_to_convert_UserInfo_objects_from_and_to_Claims()
     {
         var time = new DateTime( 2017, 4, 2, 14, 35, 59, DateTimeKind.Utc );
-        var u = new StdUserInfo( 3712, "Albert", new[] { new StdUserSchemeInfo( "Basic", time ) } );
+        var u = new StdUserInfo( 3712, "Albert", new[] { new UserSchemeInfo( "Basic", time ) } );
         JObject o = _typeSystem.UserInfo.ToJObject( u );
         List<Claim> c = _typeSystem.UserInfo.ToClaims( u );
         var u2 = _typeSystem.UserInfo.FromClaims( c );
@@ -122,8 +122,8 @@ public class StdAuthenticationTypeSystemTests
         var time1 = now.AddDays( 1 );
         var time2 = now.AddDays( 2 );
 
-        var u1 = _typeSystem.UserInfo.Create( 3712, "Albert", new[] { new StdUserSchemeInfo( "Basic", time1 ) } );
-        var u2 = _typeSystem.UserInfo.Create( 12, "Robert", new[] { new StdUserSchemeInfo( "Google", now ), new StdUserSchemeInfo( "Other", time1 ) } );
+        var u1 = _typeSystem.UserInfo.Create( 3712, "Albert", new[] { new UserSchemeInfo( "Basic", time1 ) } );
+        var u2 = _typeSystem.UserInfo.Create( 12, "Robert", new[] { new UserSchemeInfo( "Google", now ), new UserSchemeInfo( "Other", time1 ) } );
 
         CheckFromTo( new StdAuthenticationInfo( _typeSystem, null, null, null, null, "A device..." ) );
         CheckFromTo( new StdAuthenticationInfo( _typeSystem, u1, null, null, null, "76754" ) );
