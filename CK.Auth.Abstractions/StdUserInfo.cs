@@ -8,7 +8,7 @@ namespace CK.Auth;
 /// </summary>
 public class StdUserInfo : IUserInfo
 {
-    static readonly IUserSchemeInfo[] _emptySchemes = new IUserSchemeInfo[0];
+    static readonly StdUserSchemeInfo[] _emptySchemes = new StdUserSchemeInfo[0];
 
     /// <summary>
     /// Initializes a new <see cref="StdUserInfo"/>.

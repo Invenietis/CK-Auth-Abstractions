@@ -22,7 +22,7 @@ public class StdAuthenticationTypeSystem : IAuthenticationTypeSystem, IAuthentic
     Lazy<IUserInfo> _anonymous;
     Lazy<IAuthenticationInfo> _none;
     string _authenticationType = "CKA";
-    static readonly IUserSchemeInfo[] _emptySchemes = new IUserSchemeInfo[0];
+    static readonly StdUserSchemeInfo[] _emptySchemes = new StdUserSchemeInfo[0];
 
 
     /// <summary>
@@ -128,7 +128,7 @@ public class StdAuthenticationTypeSystem : IAuthenticationTypeSystem, IAuthentic
         if( claims == null ) return null;
         int userId = 0;
         string? userName = null;
-        IUserSchemeInfo[]? schemes = null;
+        StdUserSchemeInfo[]? schemes = null;
         foreach( var c in claims )
         {
             if( c.Type == UserIdKeyType )
@@ -177,10 +177,10 @@ public class StdAuthenticationTypeSystem : IAuthenticationTypeSystem, IAuthentic
             int userId = r.ReadInt32();
             string name = r.ReadString();
             int schemeCount = r.ReadInt32();
-            IUserSchemeInfo[] schemes = _emptySchemes;
+            StdUserSchemeInfo[] schemes = _emptySchemes;
             if( schemeCount > 0 )
             {
-                schemes = new IUserSchemeInfo[schemeCount];
+                schemes = new StdUserSchemeInfo[schemeCount];
                 for( int i = 0; i < schemeCount; ++i )
                 {
                     schemes[i] = new StdUserSchemeInfo( r.ReadString(), DateTime.FromBinary( r.ReadInt64() ) );
@@ -228,7 +228,7 @@ public class StdAuthenticationTypeSystem : IAuthenticationTypeSystem, IAuthentic
     /// </summary>
     /// <param name="a">Jarray to convert.</param>
     /// <returns>An array of providers.</returns>
-    protected virtual IUserSchemeInfo[] FromSchemesJArray( JArray a )
+    protected virtual StdUserSchemeInfo[] FromSchemesJArray( JArray a )
                 => a.Select( p => new StdUserSchemeInfo( (string)p["name"]!, (DateTime)p["lastUsed"]! ) ).ToArray();
 
     /// <summary>
@@ -284,7 +284,7 @@ public class StdAuthenticationTypeSystem : IAuthenticationTypeSystem, IAuthentic
     /// <param name="schemes">The Array read from <see cref="SchemesKeyType"/> claim.</param>
     /// <param name="claims">All the Claims (including the 3 already extracted ones).</param>
     /// <returns>The user information.</returns>
-    protected virtual IUserInfo UserInfoFromClaims( int userId, string? userName, IUserSchemeInfo[]? schemes, IEnumerable<Claim> claims )
+    protected virtual IUserInfo UserInfoFromClaims( int userId, string? userName, StdUserSchemeInfo[]? schemes, IEnumerable<Claim> claims )
     {
         return new StdUserInfo( userId, userName, schemes );
     }
@@ -308,7 +308,7 @@ public class StdAuthenticationTypeSystem : IAuthenticationTypeSystem, IAuthentic
     /// <param name="name">Already read user name.</param>
     /// <param name="schemes">Already read providers.</param>
     /// <returns>The user info.</returns>
-    protected virtual IUserInfo ReadUserInfoRemainder( BinaryReader r, int userId, string name, IUserSchemeInfo[] schemes )
+    protected virtual IUserInfo ReadUserInfoRemainder( BinaryReader r, int userId, string name, StdUserSchemeInfo[] schemes )
     {
         return new StdUserInfo( userId, name, schemes );
     }
@@ -527,7 +527,7 @@ public class StdAuthenticationTypeSystem : IAuthenticationTypeSystem, IAuthentic
     /// <param name="criticalExpires">Already read critical expires.</param>
     /// <param name="deviceId">Already read device identifier.</param>
     /// <returns>The authentication info.</returns>
-    private IAuthenticationInfo ReadAuthenticationInfoRemainder( BinaryReader r, IUserInfo? actualUser, IUserInfo? user, DateTime? expires, DateTime? criticalExpires, string deviceId )
+    IAuthenticationInfo ReadAuthenticationInfoRemainder( BinaryReader r, IUserInfo? actualUser, IUserInfo? user, DateTime? expires, DateTime? criticalExpires, string deviceId )
     {
         return new StdAuthenticationInfo( this, actualUser, user, expires, criticalExpires, deviceId );
     }
