@@ -177,17 +177,17 @@ public class StdAuthenticationAndUserInfoTests
         a = a.SetExpires( _time3, _time2 );
         a.Level.ShouldBe( AuthLevel.Normal );
         a.Expires.ShouldBe( _time3 );
-        a.CriticalExpires.ShouldBe( null );
+        a.CriticalExpires.ShouldBeNull();
 
         a = a.SetCriticalExpires( _time1, _time2 );
         a.Level.ShouldBe( AuthLevel.Normal );
-        a.CriticalExpires.ShouldBe( null );
+        a.CriticalExpires.ShouldBeNull();
         a.Expires.ShouldBe( _time3, "it has not changed." );
 
         a = a.SetCriticalExpires( _time1, _time3 );
         a.Level.ShouldBe( AuthLevel.Unsafe );
-        a.Expires.ShouldBe( null );
-        a.CriticalExpires.ShouldBe( null );
+        a.Expires.ShouldBeNull();
+        a.CriticalExpires.ShouldBeNull();
     }
 
     [Test]
@@ -211,12 +211,12 @@ public class StdAuthenticationAndUserInfoTests
         var aSetExpiresAfterCriticalSameExpires = a.SetExpires( _time3, _time2 );
         aSetExpiresAfterCriticalSameExpires.Level.ShouldBe( AuthLevel.Normal );
         aSetExpiresAfterCriticalSameExpires.Expires.ShouldBe( _time3 );
-        aSetExpiresAfterCriticalSameExpires.CriticalExpires.ShouldBe( null );
+        aSetExpiresAfterCriticalSameExpires.CriticalExpires.ShouldBeNull();
 
         var aSetExpiresAfterCritical = a.SetExpires( _time3.AddSeconds( -1 ), _time2 );
         aSetExpiresAfterCritical.Level.ShouldBe( AuthLevel.Normal );
         aSetExpiresAfterCritical.Expires.ShouldBe( _time3.AddSeconds( -1 ) );
-        aSetExpiresAfterCritical.CriticalExpires.ShouldBe( null );
+        aSetExpiresAfterCritical.CriticalExpires.ShouldBeNull();
     }
 
     [Test]
