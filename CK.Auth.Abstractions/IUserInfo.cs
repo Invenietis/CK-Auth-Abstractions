@@ -24,6 +24,6 @@ public interface IUserInfo
     /// Gets the authentication schemes that this user has used at least once.
     /// It is never null but may be empty. 
     /// </summary>
-    IReadOnlyList<IUserSchemeInfo> Schemes { get; }
+    IReadOnlyList<UserSchemeInfo> Schemes { get; }
 
 }

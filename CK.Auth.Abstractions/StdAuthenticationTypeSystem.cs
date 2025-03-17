@@ -22,7 +22,7 @@ public class StdAuthenticationTypeSystem : IAuthenticationTypeSystem, IAuthentic
     Lazy<IUserInfo> _anonymous;
     Lazy<IAuthenticationInfo> _none;
     string _authenticationType = "CKA";
-    static readonly IUserSchemeInfo[] _emptySchemes = new IUserSchemeInfo[0];
+    static readonly UserSchemeInfo[] _emptySchemes = new UserSchemeInfo[0];
 
 
     /// <summary>
@@ -117,7 +117,7 @@ public class StdAuthenticationTypeSystem : IAuthenticationTypeSystem, IAuthentic
     /// <param name="userId">The user identifier.</param>
     /// <param name="userName">The user name. Can be null or empty if and only if <paramref name="userId"/> is 0.</param>
     /// <param name="schemes">The schemes list.</param>
-    public virtual IUserInfo Create( int userId, string? userName, IReadOnlyList<IUserSchemeInfo>? schemes = null )
+    public virtual IUserInfo Create( int userId, string? userName, IReadOnlyList<UserSchemeInfo>? schemes = null )
     {
         return new StdUserInfo( userId, userName, schemes );
     }
@@ -128,7 +128,7 @@ public class StdAuthenticationTypeSystem : IAuthenticationTypeSystem, IAuthentic
         if( claims == null ) return null;
         int userId = 0;
         string? userName = null;
-        IUserSchemeInfo[]? schemes = null;
+        UserSchemeInfo[]? schemes = null;
         foreach( var c in claims )
         {
             if( c.Type == UserIdKeyType )
@@ -177,13 +177,13 @@ public class StdAuthenticationTypeSystem : IAuthenticationTypeSystem, IAuthentic
             int userId = r.ReadInt32();
             string name = r.ReadString();
             int schemeCount = r.ReadInt32();
-            IUserSchemeInfo[] schemes = _emptySchemes;
+            UserSchemeInfo[] schemes = _emptySchemes;
             if( schemeCount > 0 )
             {
-                schemes = new IUserSchemeInfo[schemeCount];
+                schemes = new UserSchemeInfo[schemeCount];
                 for( int i = 0; i < schemeCount; ++i )
                 {
-                    schemes[i] = new StdUserSchemeInfo( r.ReadString(), DateTime.FromBinary( r.ReadInt64() ) );
+                    schemes[i] = new UserSchemeInfo( r.ReadString(), DateTime.FromBinary( r.ReadInt64() ) );
                 }
             }
             return ReadUserInfoRemainder( r, userId, name, schemes );
@@ -219,7 +219,7 @@ public class StdAuthenticationTypeSystem : IAuthenticationTypeSystem, IAuthentic
     /// </summary>
     /// <param name="schemes">The schemes.</param>
     /// <returns>A JArray of {name:..., lastUsed:...} objects.</returns>
-    protected virtual JArray ToSchemesJArray( IEnumerable<IUserSchemeInfo> schemes )
+    protected virtual JArray ToSchemesJArray( IEnumerable<UserSchemeInfo> schemes )
                 => new JArray( schemes.Select(
                                 p => new JObject( new JProperty( "name", p.Name ), new JProperty( "lastUsed", p.LastUsed ) ) ) );
 
@@ -228,8 +228,8 @@ public class StdAuthenticationTypeSystem : IAuthenticationTypeSystem, IAuthentic
     /// </summary>
     /// <param name="a">Jarray to convert.</param>
     /// <returns>An array of providers.</returns>
-    protected virtual IUserSchemeInfo[] FromSchemesJArray( JArray a )
-                => a.Select( p => new StdUserSchemeInfo( (string)p["name"]!, (DateTime)p["lastUsed"]! ) ).ToArray();
+    protected virtual UserSchemeInfo[] FromSchemesJArray( JArray a )
+                => a.Select( p => new UserSchemeInfo( (string)p["name"]!, (DateTime)p["lastUsed"]! ) ).ToArray();
 
     /// <summary>
     /// Implements <see cref="IUserInfoType.FromJObject(JObject)"/>.
@@ -248,7 +248,7 @@ public class StdAuthenticationTypeSystem : IAuthenticationTypeSystem, IAuthentic
             JToken? t = o[SchemesKeyType] ?? o["providers"];
             var schemes = t != null
                             // StdUserSchemeInfo will throw if "name" or "lastUsed" are not found.
-                            ? t.Select( p => new StdUserSchemeInfo( (string)p["name"]!, (DateTime)p["lastUsed"]! ) ).ToArray()
+                            ? t.Select( p => new UserSchemeInfo( (string)p["name"]!, (DateTime)p["lastUsed"]! ) ).ToArray()
                             : null;
             return new StdUserInfo( userId, userName, schemes );
         }
@@ -284,7 +284,7 @@ public class StdAuthenticationTypeSystem : IAuthenticationTypeSystem, IAuthentic
     /// <param name="schemes">The Array read from <see cref="SchemesKeyType"/> claim.</param>
     /// <param name="claims">All the Claims (including the 3 already extracted ones).</param>
     /// <returns>The user information.</returns>
-    protected virtual IUserInfo UserInfoFromClaims( int userId, string? userName, IUserSchemeInfo[]? schemes, IEnumerable<Claim> claims )
+    protected virtual IUserInfo UserInfoFromClaims( int userId, string? userName, UserSchemeInfo[]? schemes, IEnumerable<Claim> claims )
     {
         return new StdUserInfo( userId, userName, schemes );
     }
@@ -308,7 +308,7 @@ public class StdAuthenticationTypeSystem : IAuthenticationTypeSystem, IAuthentic
     /// <param name="name">Already read user name.</param>
     /// <param name="schemes">Already read providers.</param>
     /// <returns>The user info.</returns>
-    protected virtual IUserInfo ReadUserInfoRemainder( BinaryReader r, int userId, string name, IUserSchemeInfo[] schemes )
+    protected virtual IUserInfo ReadUserInfoRemainder( BinaryReader r, int userId, string name, UserSchemeInfo[] schemes )
     {
         return new StdUserInfo( userId, name, schemes );
     }
@@ -527,7 +527,7 @@ public class StdAuthenticationTypeSystem : IAuthenticationTypeSystem, IAuthentic
     /// <param name="criticalExpires">Already read critical expires.</param>
     /// <param name="deviceId">Already read device identifier.</param>
     /// <returns>The authentication info.</returns>
-    private IAuthenticationInfo ReadAuthenticationInfoRemainder( BinaryReader r, IUserInfo? actualUser, IUserInfo? user, DateTime? expires, DateTime? criticalExpires, string deviceId )
+    IAuthenticationInfo ReadAuthenticationInfoRemainder( BinaryReader r, IUserInfo? actualUser, IUserInfo? user, DateTime? expires, DateTime? criticalExpires, string deviceId )
     {
         return new StdAuthenticationInfo( this, actualUser, user, expires, criticalExpires, deviceId );
     }

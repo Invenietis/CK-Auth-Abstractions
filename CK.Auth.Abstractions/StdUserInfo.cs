@@ -8,7 +8,7 @@ namespace CK.Auth;
 /// </summary>
 public class StdUserInfo : IUserInfo
 {
-    static readonly IUserSchemeInfo[] _emptySchemes = new IUserSchemeInfo[0];
+    static readonly UserSchemeInfo[] _emptySchemes = new UserSchemeInfo[0];
 
     /// <summary>
     /// Initializes a new <see cref="StdUserInfo"/>.
@@ -16,7 +16,7 @@ public class StdUserInfo : IUserInfo
     /// <param name="userId">The user identifier.</param>
     /// <param name="userName">The user name. Can be null or empty if and only if <paramref name="userId"/> is 0.</param>
     /// <param name="schemes">The schemes list.</param>
-    public StdUserInfo( int userId, string? userName, IReadOnlyList<IUserSchemeInfo>? schemes = null )
+    public StdUserInfo( int userId, string? userName, IReadOnlyList<UserSchemeInfo>? schemes = null )
     {
         UserId = userId;
         UserName = userName ?? string.Empty;
@@ -37,6 +37,6 @@ public class StdUserInfo : IUserInfo
     /// <summary>
     /// See <see cref="IUserInfo.Schemes"/>.
     /// </summary>
-    public IReadOnlyList<IUserSchemeInfo> Schemes { get; }
+    public IReadOnlyList<UserSchemeInfo> Schemes { get; }
 
 }
